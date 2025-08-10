@@ -4,7 +4,7 @@ export const filterCategories: FilterCategory[] = [
     {
         name: 'Video Effects',
         description: 'Visual effects and enhancements',
-        filters: ['blur', 'sharpen', 'brightness', 'contrast', 'saturation', 'hue', 'gamma'],
+        filters: ['gblur', 'unsharp', 'eq', 'hue'],
     },
     {
         name: 'Video Filters',
@@ -36,8 +36,8 @@ export const filterCategories: FilterCategory[] = [
 export const filterDefinitions: FilterDefinition[] = [
     // Video Effects
     {
-        name: 'blur',
-        description: 'Apply Gaussian blur filter',
+        name: 'gblur',
+        description: 'Apply Gaussian blur (gblur) filter',
         inputs: 1,
         outputs: 1,
         timeline: true,
@@ -56,11 +56,11 @@ export const filterDefinitions: FilterDefinition[] = [
                 step: 0.1,
             },
         ],
-        examples: ['blur=sigma=2.0'],
+        examples: ['gblur=sigma=2.0'],
     },
     {
-        name: 'sharpen',
-        description: 'Sharpen the input video',
+        name: 'unsharp',
+        description: 'Sharpen the input video (unsharp)',
         inputs: 1,
         outputs: 1,
         timeline: true,
@@ -99,11 +99,11 @@ export const filterDefinitions: FilterDefinition[] = [
                 step: 0.1,
             },
         ],
-        examples: ['sharpen=luma_msize_x=7:luma_msize_y=7:luma_amount=2.5'],
+        examples: ['unsharp=luma_msize_x=7:luma_msize_y=7:luma_amount=2.5'],
     },
     {
-        name: 'brightness',
-        description: 'Adjust brightness',
+        name: 'eq',
+        description: 'Adjust video brightness/contrast/saturation/gamma (eq)',
         inputs: 1,
         outputs: 1,
         timeline: true,
@@ -121,54 +121,38 @@ export const filterDefinitions: FilterDefinition[] = [
                 max: 1.0,
                 step: 0.01,
             },
-        ],
-        examples: ['brightness=0.1'],
-    },
-    {
-        name: 'contrast',
-        description: 'Adjust contrast',
-        inputs: 1,
-        outputs: 1,
-        timeline: true,
-        slice: false,
-        command: false,
-        category: 'Video Effects',
-        parameters: [
             {
                 name: 'contrast',
                 type: 'range',
-                description: 'Contrast adjustment',
-                required: false,
-                defaultValue: 1.0,
-                min: -1000.0,
-                max: 1000.0,
-                step: 0.01,
-            },
-        ],
-        examples: ['contrast=1.2'],
-    },
-    {
-        name: 'saturation',
-        description: 'Adjust color saturation',
-        inputs: 1,
-        outputs: 1,
-        timeline: true,
-        slice: false,
-        command: false,
-        category: 'Video Effects',
-        parameters: [
-            {
-                name: 'saturation',
-                type: 'range',
-                description: 'Saturation level',
+                description: 'Contrast multiplier',
                 required: false,
                 defaultValue: 1.0,
                 min: 0.0,
-                max: 3.0,
+                max: 10.0,
+                step: 0.01,
+            },
+            {
+                name: 'saturation',
+                type: 'range',
+                description: 'Saturation multiplier',
+                required: false,
+                defaultValue: 1.0,
+                min: 0.0,
+                max: 10.0,
+                step: 0.01,
+            },
+            {
+                name: 'gamma',
+                type: 'range',
+                description: 'Gamma adjustment',
+                required: false,
+                defaultValue: 1.0,
+                min: 0.1,
+                max: 10.0,
                 step: 0.01,
             },
         ],
-        examples: ['saturation=1.5'],
+        examples: ['eq=brightness=0.1:contrast=1.2'],
     },
 
     // Video Filters
@@ -183,7 +167,7 @@ export const filterDefinitions: FilterDefinition[] = [
         category: 'Video Filters',
         parameters: [
             {
-                name: 'width',
+                name: 'w',
                 type: 'number',
                 description: 'Output width (-1 for auto)',
                 required: true,
@@ -192,7 +176,7 @@ export const filterDefinitions: FilterDefinition[] = [
                 max: 7680,
             },
             {
-                name: 'height',
+                name: 'h',
                 type: 'number',
                 description: 'Output height (-1 for auto)',
                 required: true,
@@ -222,7 +206,7 @@ export const filterDefinitions: FilterDefinition[] = [
         category: 'Video Filters',
         parameters: [
             {
-                name: 'width',
+                name: 'w',
                 type: 'number',
                 description: 'Crop width',
                 required: true,
@@ -230,7 +214,7 @@ export const filterDefinitions: FilterDefinition[] = [
                 max: 7680,
             },
             {
-                name: 'height',
+                name: 'h',
                 type: 'number',
                 description: 'Crop height',
                 required: true,
@@ -322,7 +306,7 @@ export const filterDefinitions: FilterDefinition[] = [
         category: 'Audio Effects',
         parameters: [
             {
-                name: 'frequency',
+                name: 'f',
                 type: 'number',
                 description: 'Cutoff frequency in Hz',
                 required: true,
@@ -331,7 +315,7 @@ export const filterDefinitions: FilterDefinition[] = [
                 max: 22050,
             },
             {
-                name: 'poles',
+                name: 'p',
                 type: 'number',
                 description: 'Number of poles',
                 required: false,
@@ -353,7 +337,7 @@ export const filterDefinitions: FilterDefinition[] = [
         category: 'Audio Effects',
         parameters: [
             {
-                name: 'frequency',
+                name: 'f',
                 type: 'number',
                 description: 'Cutoff frequency in Hz',
                 required: true,
@@ -362,7 +346,7 @@ export const filterDefinitions: FilterDefinition[] = [
                 max: 22050,
             },
             {
-                name: 'poles',
+                name: 'p',
                 type: 'number',
                 description: 'Number of poles',
                 required: false,
@@ -413,8 +397,8 @@ export const filterDefinitions: FilterDefinition[] = [
 
     // Noise Reduction
     {
-        name: 'denoise',
-        description: 'Denoise frames using Non-Local Means algorithm',
+        name: 'nlmeans',
+        description: 'Denoise frames using Non-Local Means algorithm (nlmeans)',
         inputs: 1,
         outputs: 1,
         timeline: true,
@@ -451,7 +435,7 @@ export const filterDefinitions: FilterDefinition[] = [
                 max: 99,
             },
         ],
-        examples: ['denoise=s=2.0:p=7:r=15'],
+        examples: ['nlmeans=s=2.0:p=7:r=15'],
     },
 
     // Color Correction

@@ -135,8 +135,9 @@ class CommandGenerationService {
         }
 
         const filterStrings = enabledFilters.map(filter => {
-            const params = this.buildFilterParameters(filter);
-            return params ? `${filter.name}=${params}` : filter.name;
+            const actualName = filter.name; // 1:1 mapping with FFmpeg filter names
+            const params = this.buildFilterParameters(actualName, filter);
+            return params ? `${actualName}=${params}` : actualName;
         });
 
         return filterStrings.join(',');
@@ -176,12 +177,14 @@ class CommandGenerationService {
     /**
      * Build parameter string for a filter
      */
-    private buildFilterParameters(filter: FilterConfig): string {
+    private buildFilterParameters(actualName: string, filter: FilterConfig): string {
         const params: string[] = [];
 
         Object.entries(filter.parameters).forEach(([key, paramValue]) => {
             if (paramValue.value !== undefined && paramValue.value !== '') {
-                let value = paramValue.value;
+                let value = paramValue.value as any;
+
+                const mappedKey = this.mapParameterKey(actualName, filter.name, key);
 
                 // Handle different parameter types
                 if (paramValue.type === 'string' && typeof value === 'string') {
@@ -189,11 +192,30 @@ class CommandGenerationService {
                     value = value.replace(/[,:=]/g, '\\$&');
                 }
 
-                params.push(`${key}=${value}`);
+                params.push(`${mappedKey}=${value}`);
             }
         });
 
         return params.join(':');
+    }
+
+    private mapParameterKey(actualName: string, originalName: string, key: string): string {
+        // Per-filter key maps
+        const perFilterMaps: Record<string, Record<string, string>> = {
+            // Video scaling
+            scale: { width: 'w', height: 'h' },
+            // Video crop
+            crop: { width: 'w', height: 'h' },
+            // Audio filters
+            highpass: { frequency: 'f', poles: 'p' },
+            lowpass: { frequency: 'f', poles: 'p' },
+        };
+
+        // Prefer specific per-filter maps
+        const byActual = perFilterMaps[actualName];
+        if (byActual && byActual[key]) return byActual[key];
+
+        return key;
     }
 
     /**
