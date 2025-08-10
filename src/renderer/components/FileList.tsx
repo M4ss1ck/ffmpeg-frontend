@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { MediaFileInfo, StreamInfo } from '../../types/services';
-import { Card, Button } from './ui';
+import Card from './ui/Card';
+import Button from './ui/Button';
 import styles from './FileList.module.css';
 
 interface FileListProps {

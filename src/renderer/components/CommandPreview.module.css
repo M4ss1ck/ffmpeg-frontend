@@ -1,0 +1,248 @@
+.commandPreview {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--color-background);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.info h4 {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.metadata {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.description {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.complexity {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.commandContainer {
+  position: relative;
+}
+
+.commandDisplay {
+  padding: 16px;
+  background: #1e1e1e; /* Dark background for code */
+  color: #d4d4d4; /* Light text */
+  font-family: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-x: auto;
+}
+
+.commandText {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.commandText code {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* Syntax highlighting styles */
+.command {
+  color: #569cd6; /* Blue for main command */
+  font-weight: 600;
+}
+
+.flag {
+  color: #c586c0; /* Purple for flags */
+  font-weight: 500;
+}
+
+.value {
+  color: #ce9178; /* Orange for values */
+}
+
+.number {
+  color: #b5cea8; /* Green for numbers */
+}
+
+.path {
+  color: #ce9178; /* Orange for file paths */
+}
+
+.filter {
+  color: #4ec9b0; /* Teal for filter names */
+  font-weight: 500;
+}
+
+.parameter {
+  color: #9cdcfe; /* Light blue for parameters */
+}
+
+.operator {
+  color: #d4d4d4; /* Default color for operators */
+}
+
+.text {
+  color: #d4d4d4; /* Default text color */
+}
+
+.editMode {
+  position: relative;
+}
+
+.commandEditor {
+  width: 100%;
+  padding: 16px;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  border: none;
+  outline: none;
+  font-family: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.editHint {
+  position: absolute;
+  bottom: 8px;
+  right: 12px;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  background: rgba(0, 0, 0, 0.8);
+  padding: 4px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+.argumentsList {
+  padding: 16px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-background);
+}
+
+.argumentsList h5 {
+  margin: 0 0 8px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.arguments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.argument {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.argumentFlag {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+}
+
+.argumentValue {
+  background: var(--color-background);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+}
+
+/* Scrollbar for command display */
+.commandDisplay::-webkit-scrollbar {
+  height: 6px;
+}
+
+.commandDisplay::-webkit-scrollbar-track {
+  background: #2d2d2d;
+}
+
+.commandDisplay::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 3px;
+}
+
+.commandDisplay::-webkit-scrollbar-thumb:hover {
+  background: #777;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  
+  .metadata {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .actions {
+    justify-content: flex-end;
+  }
+  
+  .commandDisplay {
+    font-size: 12px;
+  }
+  
+  .arguments {
+    gap: 4px;
+  }
+  
+  .argument {
+    font-size: 10px;
+    padding: 3px 6px;
+  }
+}
+
+/* Animation for copy feedback */
+@keyframes copySuccess {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.actions button:disabled {
+  animation: copySuccess 0.3s ease;
+}

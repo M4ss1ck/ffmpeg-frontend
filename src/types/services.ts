@@ -169,3 +169,66 @@ export interface FileSizeEstimate {
   estimatedSizeFormatted: string; // e.g., "125 MB"
   confidence: 'low' | 'medium' | 'high';
 }
+
+// Filter System Types
+export interface FilterConfig {
+  id: string;
+  name: string;
+  parameters: Record<string, FilterParameterValue>;
+  enabled: boolean;
+  order: number;
+}
+
+export interface FilterParameterValue {
+  value: string | number | boolean;
+  type: 'string' | 'number' | 'boolean' | 'select' | 'range';
+}
+
+export interface FilterParameter {
+  name: string;
+  type: 'string' | 'number' | 'boolean' | 'select' | 'range';
+  description: string;
+  required: boolean;
+  defaultValue?: string | number | boolean;
+  options?: string[]; // For select type
+  min?: number; // For number/range type
+  max?: number; // For number/range type
+  step?: number; // For number/range type
+}
+
+export interface FilterDefinition extends Filter {
+  category: string;
+  parameters: FilterParameter[];
+  examples?: string[];
+}
+
+export interface FilterCategory {
+  name: string;
+  description: string;
+  filters: string[]; // Filter names in this category
+}
+
+// FFmpeg Command Generation Types
+export interface FFmpegCommand {
+  inputFiles: string[];
+  outputFile: string;
+  videoCodec?: string;
+  audioCodec?: string;
+  format?: string;
+  quality?: QualitySettings;
+  filters: FilterConfig[];
+  customOptions?: string[];
+}
+
+export interface CommandGenerationOptions {
+  includeProgress: boolean;
+  overwriteOutput: boolean;
+  verboseLogging: boolean;
+}
+
+export interface GeneratedCommand {
+  command: string;
+  args: string[];
+  description: string;
+  estimatedComplexity: 'low' | 'medium' | 'high';
+}

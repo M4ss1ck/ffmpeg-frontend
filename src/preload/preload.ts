@@ -63,12 +63,29 @@ const electronAPI = {
       ipcRenderer.invoke('dialog:selectFiles', options),
     selectOutputPath: (options?: Record<string, unknown>) =>
       ipcRenderer.invoke('dialog:selectOutputPath', options),
+    selectOutputDirectory: (options?: Record<string, unknown>) =>
+      ipcRenderer.invoke('dialog:selectOutputDirectory', options),
   },
 
   // Application info
   app: {
     getVersion: () => ipcRenderer.invoke('app:getVersion'),
     getPlatform: () => ipcRenderer.invoke('app:getPlatform'),
+  },
+
+  // Filter system
+  filter: {
+    getDefinitions: () => ipcRenderer.invoke('filter:getDefinitions'),
+    getCategories: () => ipcRenderer.invoke('filter:getCategories'),
+  },
+
+  // Command generation
+  command: {
+    generate: (command: any, options?: unknown) =>
+      ipcRenderer.invoke('command:generate', command, options),
+    validate: (command: unknown) => ipcRenderer.invoke('command:validate', command),
+    parse: (commandString: string) =>
+      ipcRenderer.invoke('command:parse', commandString),
   },
 
   // System utilities (legacy)

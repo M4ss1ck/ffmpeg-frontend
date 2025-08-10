@@ -3,8 +3,18 @@ import TitleBar from './components/TitleBar';
 import UIDemo from './components/UIDemo';
 import FileInputInterface from './components/FileInputInterface';
 import OutputSettings from './components/OutputSettings';
-import { Button } from './components/ui';
-import { MediaFileInfo, OutputSettings as OutputSettingsType } from '../types/services';
+import FilterPanel from './components/FilterPanel';
+import CommandPreview from './components/CommandPreview';
+import Button from './components/ui/Button';
+import {
+  MediaFileInfo,
+  OutputSettings as OutputSettingsType,
+  FilterConfig,
+  FilterDefinition,
+  FilterCategory,
+  FFmpegCommand,
+  GeneratedCommand,
+} from '../types/services';
 import './styles/App.css';
 
 const App: React.FC = () => {
@@ -20,6 +30,10 @@ const App: React.FC = () => {
     },
     outputPath: '',
   });
+  const [filters, setFilters] = useState<FilterConfig[]>([]);
+  const [filterDefinitions, setFilterDefinitions] = useState<FilterDefinition[]>([]);
+  const [filterCategories, setFilterCategories] = useState<FilterCategory[]>([]);
+  const [generatedCommand, setGeneratedCommand] = useState<GeneratedCommand | null>(null);
 
   useEffect(() => {
     // Listen for window maximize/restore events
@@ -28,7 +42,68 @@ const App: React.FC = () => {
         setIsMaximized(maximized);
       });
     }
+
+    // Load filter definitions and categories
+    loadFilterData();
   }, []);
+
+  // Load filter definitions and categories from main process
+  const loadFilterData = async () => {
+    try {
+      const [definitionsResult, categoriesResult] = await Promise.all([
+        window.electronAPI?.filter?.getDefinitions(),
+        window.electronAPI?.filter?.getCategories(),
+      ]);
+
+      if (definitionsResult?.success) {
+        setFilterDefinitions(definitionsResult.data);
+      }
+
+      if (categoriesResult?.success) {
+        setFilterCategories(categoriesResult.data);
+      }
+    } catch (error) {
+      console.error('Failed to load filter data:', error);
+    }
+  };
+
+  // Generate FFmpeg command when settings change
+  useEffect(() => {
+    if (selectedFiles.length > 0 && outputSettings.outputPath) {
+      generateCommand();
+    }
+  }, [selectedFiles, outputSettings, filters]);
+
+  const generateCommand = async () => {
+    if (selectedFiles.length === 0 || !outputSettings.outputPath) {
+      setGeneratedCommand(null);
+      return;
+    }
+
+    try {
+      const ffmpegCommand: FFmpegCommand = {
+        inputFiles: selectedFiles.map(file => file.path),
+        outputFile: outputSettings.outputPath,
+        videoCodec: outputSettings.codec,
+        format: outputSettings.format,
+        quality: outputSettings.quality,
+        filters: filters,
+      };
+
+      const result = await window.electronAPI?.command?.generate(ffmpegCommand, {
+        includeProgress: true,
+        overwriteOutput: true,
+        verboseLogging: false,
+      });
+      console.log('Generated command:', result);
+
+      if (result?.success) {
+        setGeneratedCommand(result.data);
+      }
+    } catch (error) {
+      console.error('Failed to generate command:', error);
+    }
+  };
 
   const handleFilesChange = (files: MediaFileInfo[]) => {
     setSelectedFiles(files);
@@ -80,12 +155,44 @@ const App: React.FC = () => {
                     className="output-settings-section"
                   />
                 )}
+
+                {selectedFiles.length > 0 && (
+                  <FilterPanel
+                    filters={filters}
+                    onFiltersChange={setFilters}
+                    availableFilters={filterDefinitions}
+                    filterCategories={filterCategories}
+                  />
+                )}
               </div>
+
+              {selectedFiles.length > 0 && generatedCommand && (
+                <div className="command-section">
+                  <CommandPreview
+                    command={generatedCommand}
+                    onCommandEdit={async (editedCommand) => {
+                      try {
+                        const result = await window.electronAPI?.command?.parse(editedCommand);
+                        if (result?.success) {
+                          // Update settings based on parsed command
+                          console.log('Parsed command:', result.data);
+                        }
+                      } catch (error) {
+                        console.error('Failed to parse edited command:', error);
+                      }
+                    }}
+                    onCopyCommand={() => {
+                      console.log('Command copied to clipboard');
+                    }}
+                  />
+                </div>
+              )}
 
               {selectedFiles.length > 0 && outputSettings.outputPath && (
                 <div className="conversion-ready">
                   <p className="conversion-ready-text">
                     Ready to convert {selectedFiles.length} file{selectedFiles.length !== 1 ? 's' : ''} to {outputSettings.format.toUpperCase()}
+                    {filters.length > 0 && ` with ${filters.filter(f => f.enabled).length} filter(s)`}
                   </p>
                   <Button variant="primary" size="lg">
                     Start Conversion

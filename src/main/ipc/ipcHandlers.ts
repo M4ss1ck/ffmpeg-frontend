@@ -2,6 +2,8 @@ import { ipcMain, dialog } from 'electron';
 import { mainWindow } from '../main.js';
 import { ffmpegService } from '../services/ffmpegService.js';
 import { fileService } from '../services/fileService.js';
+import { commandGenerationService } from '../services/commandGenerationService.js';
+import { filterDefinitions, filterCategories } from '../data/filterDefinitions.js';
 
 export const setupIPC = (): void => {
   // FFmpeg integration handlers
@@ -161,6 +163,21 @@ export const setupIPC = (): void => {
     }
   });
 
+  ipcMain.handle('dialog:selectOutputDirectory', async (_, options) => {
+    if (!mainWindow)
+      return { success: false, error: 'No main window available' };
+
+    try {
+      const outputDirectory = await fileService.selectOutputDirectory(
+        mainWindow,
+        options
+      );
+      return { success: true, data: outputDirectory };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });
+
   // Legacy file dialog handlers (for backward compatibility)
   ipcMain.handle('dialog:openFile', async (_, options) => {
     if (!mainWindow) return { canceled: true, filePaths: [] };
@@ -212,6 +229,51 @@ export const setupIPC = (): void => {
 
   ipcMain.handle('app:getPlatform', () => {
     return process.platform;
+  });
+
+  // Filter system handlers
+  ipcMain.handle('filter:getDefinitions', async () => {
+    try {
+      return { success: true, data: filterDefinitions };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('filter:getCategories', async () => {
+    try {
+      return { success: true, data: filterCategories };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  // Command generation handlers
+  ipcMain.handle('command:generate', async (_, command, options) => {
+    try {
+      const result = commandGenerationService.generateCommand(command, options);
+      return { success: true, data: result };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('command:validate', async (_, command) => {
+    try {
+      const result = commandGenerationService.validateCommand(command);
+      return { success: true, data: result };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('command:parse', async (_, commandString: string) => {
+    try {
+      const result = commandGenerationService.parseCommand(commandString);
+      return { success: true, data: result };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
   });
 
   // Legacy system handler (updated)

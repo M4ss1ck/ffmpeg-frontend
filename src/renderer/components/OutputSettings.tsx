@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Button, Input, Select, Card } from './ui';
+import Button from './ui/Button';
+import Input from './ui/Input';
+import Select from './ui/Select';
+import Card from './ui/Card';
 import {
     OutputSettings as OutputSettingsType,
     Resolution,
@@ -67,7 +70,14 @@ const QUALITY_PRESETS: QualityPreset[] = [
 ];
 
 // Format to codec mappings
-const FORMAT_CODEC_MAPPINGS = {
+type FormatCodecMapping = {
+    videoCodecs: string[];
+    audioCodecs: string[];
+    defaultVideoCodec?: string;
+    defaultAudioCodec?: string;
+};
+
+const FORMAT_CODEC_MAPPINGS: Record<string, FormatCodecMapping> = {
     mp4: {
         videoCodecs: ['libx264', 'libx265', 'libvpx-vp9'],
         audioCodecs: ['aac', 'mp3', 'libopus'],
@@ -143,6 +153,7 @@ const OutputSettings: React.FC<OutputSettingsProps> = ({
         },
         outputPath: '',
     });
+    const [selectedPreset, setSelectedPreset] = useState<string>('high');
 
     // Determine if we're working with video or audio files
     const fileType = useMemo(() => {
@@ -179,8 +190,37 @@ const OutputSettings: React.FC<OutputSettingsProps> = ({
         loadFFmpegData();
     }, []);
 
+    // Set default output path based on the last added file
+    useEffect(() => {
+        if (selectedFiles.length > 0 && !settings.outputPath) {
+            const lastFile = selectedFiles[selectedFiles.length - 1];
+            const parentDirectory = lastFile.path.substring(0, lastFile.path.lastIndexOf('/') || lastFile.path.lastIndexOf('\\'));
+            updateSettings({ outputPath: parentDirectory });
+        }
+    }, [selectedFiles, settings.outputPath]);
+
     // Get available formats based on file type
     const availableFormats = useMemo(() => {
+        // If no formats loaded from FFmpeg, use fallback formats
+        if (formats.length === 0) {
+            const fallbackFormats = fileType === 'audio'
+                ? [
+                    { name: 'mp3', longName: 'MP3 (MPEG Audio Layer III)', extensions: ['mp3'], mimeTypes: ['audio/mpeg'], canDemux: true, canMux: true },
+                    { name: 'wav', longName: 'WAV / WAVE (Waveform Audio)', extensions: ['wav'], mimeTypes: ['audio/wav'], canDemux: true, canMux: true },
+                    { name: 'flac', longName: 'FLAC (Free Lossless Audio Codec)', extensions: ['flac'], mimeTypes: ['audio/flac'], canDemux: true, canMux: true },
+                    { name: 'aac', longName: 'AAC (Advanced Audio Coding)', extensions: ['aac'], mimeTypes: ['audio/aac'], canDemux: true, canMux: true },
+                    { name: 'ogg', longName: 'Ogg', extensions: ['ogg'], mimeTypes: ['audio/ogg'], canDemux: true, canMux: true }
+                ]
+                : [
+                    { name: 'mp4', longName: 'MP4 (MPEG-4 Part 14)', extensions: ['mp4'], mimeTypes: ['video/mp4'], canDemux: true, canMux: true },
+                    { name: 'mkv', longName: 'Matroska / WebM', extensions: ['mkv'], mimeTypes: ['video/x-matroska'], canDemux: true, canMux: true },
+                    { name: 'webm', longName: 'WebM', extensions: ['webm'], mimeTypes: ['video/webm'], canDemux: true, canMux: true },
+                    { name: 'avi', longName: 'AVI (Audio Video Interleaved)', extensions: ['avi'], mimeTypes: ['video/x-msvideo'], canDemux: true, canMux: true },
+                    { name: 'mov', longName: 'QuickTime / MOV', extensions: ['mov'], mimeTypes: ['video/quicktime'], canDemux: true, canMux: true }
+                ];
+            return fallbackFormats;
+        }
+
         if (fileType === 'audio') {
             return formats.filter(format =>
                 ['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a'].includes(format.name)
@@ -199,6 +239,17 @@ const OutputSettings: React.FC<OutputSettingsProps> = ({
         const codecNames = fileType === 'video'
             ? [...mapping.videoCodecs, ...mapping.audioCodecs]
             : mapping.audioCodecs;
+
+        // If no codecs loaded from FFmpeg, use fallback codec data
+        if (codecs.length === 0) {
+            return codecNames.map(codecName => ({
+                name: codecName,
+                longName: codecName.toUpperCase(),
+                type: mapping.videoCodecs.includes(codecName) ? 'video' as const : 'audio' as const,
+                canEncode: true,
+                canDecode: true,
+            }));
+        }
 
         return codecs.filter(codec =>
             codecNames.includes(codec.name) && codec.canEncode
@@ -231,6 +282,7 @@ const OutputSettings: React.FC<OutputSettingsProps> = ({
     const handlePresetChange = (presetId: string) => {
         const preset = QUALITY_PRESETS.find(p => p.id === presetId);
         if (preset) {
+            setSelectedPreset(presetId);
             updateSettings({
                 quality: { ...settings.quality, ...preset.settings },
             });
@@ -328,8 +380,7 @@ const OutputSettings: React.FC<OutputSettingsProps> = ({
                         {QUALITY_PRESETS.map(preset => (
                             <button
                                 key={preset.id}
-                                className={`${styles.preset} ${settings.quality.preset === preset.settings.preset ? styles.active : ''
-                                    }`}
+                                className={`${styles.preset} ${selectedPreset === preset.id ? styles.active : ''}`}
                                 onClick={() => handlePresetChange(preset.id)}
                             >
                                 <div className={styles.presetName}>{preset.name}</div>
@@ -486,8 +537,9 @@ const OutputSettings: React.FC<OutputSettingsProps> = ({
                         <Button
                             variant="outline"
                             onClick={async () => {
-                                const result = await window.electronAPI.dialog.selectOutputPath({
-                                    title: 'Select Output Location',
+                                const result = await window.electronAPI.dialog.selectOutputDirectory({
+                                    title: 'Select Output Directory',
+                                    defaultPath: settings.outputPath || undefined,
                                 });
                                 if (result.success && result.data) {
                                     updateSettings({ outputPath: result.data });
