@@ -1,0 +1,87 @@
+.title-bar {
+  display: flex;
+  height: 32px;
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  user-select: none;
+  -webkit-user-select: none;
+  position: relative;
+  z-index: 1000;
+}
+
+.title-bar-drag-region {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding-left: var(--spacing-4);
+  -webkit-app-region: drag;
+  cursor: default;
+}
+
+.title-bar-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.app-icon {
+  font-size: var(--font-size-base);
+}
+
+.title-bar-controls {
+  display: flex;
+  -webkit-app-region: no-drag;
+}
+
+.title-bar-button {
+  width: 46px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  transition: background-color var(--transition-fast);
+}
+
+.title-bar-button:hover {
+  background-color: var(--color-border);
+}
+
+.title-bar-button:active {
+  background-color: var(--color-border-hover);
+}
+
+.title-bar-button.close:hover {
+  background-color: var(--color-error);
+  color: white;
+}
+
+.title-bar-button.close:active {
+  background-color: #b91c1c;
+}
+
+.title-bar-button svg {
+  width: 12px;
+  height: 12px;
+  fill: currentColor;
+}
+
+/* macOS specific styles */
+@media (platform: darwin) {
+  .title-bar {
+    padding-left: 70px; /* Space for macOS traffic lights */
+  }
+}
+
+/* Windows specific styles */
+@media (platform: win32) {
+  .title-bar-button {
+    width: 45px;
+  }
+}
