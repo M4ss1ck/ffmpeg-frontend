@@ -128,6 +128,77 @@ p {
   border: 0;
 }
 
+/* Layout Utilities */
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.gap-2 {
+  gap: var(--spacing-2);
+}
+
+.gap-4 {
+  gap: var(--spacing-4);
+}
+
+/* Text Utilities */
+.text-center {
+  text-align: center;
+}
+
+.text-primary {
+  color: var(--color-primary);
+}
+
+.text-secondary {
+  color: var(--color-text-secondary);
+}
+
+.text-error {
+  color: var(--color-error);
+}
+
+.text-success {
+  color: var(--color-success);
+}
+
+/* Spacing Utilities */
+.p-2 {
+  padding: var(--spacing-2);
+}
+
+.p-4 {
+  padding: var(--spacing-4);
+}
+
+.p-6 {
+  padding: var(--spacing-6);
+}
+
+.m-2 {
+  margin: var(--spacing-2);
+}
+
+.m-4 {
+  margin: var(--spacing-4);
+}
+
+.mb-4 {
+  margin-bottom: var(--spacing-4);
+}
+
 /* Focus Styles */
 *:focus {
   outline: 2px solid var(--color-primary);
@@ -136,6 +207,12 @@ p {
 
 *:focus:not(:focus-visible) {
   outline: none;
+}
+
+/* Focus visible for keyboard navigation */
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 /* Scrollbar Styles */

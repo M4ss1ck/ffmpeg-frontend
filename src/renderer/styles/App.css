@@ -55,3 +55,99 @@
 .status-info p:last-child {
   margin-bottom: 0;
 }
+
+/* Main Interface Styles */
+.main-interface {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.interface-header {
+  flex-shrink: 0;
+  padding: var(--spacing-6) var(--spacing-8);
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.interface-header h1 {
+  color: var(--color-primary);
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-semibold);
+  margin: 0;
+}
+
+.interface-header p {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-base);
+  margin: 0;
+}
+
+.header-actions {
+  margin-top: var(--spacing-2);
+}
+
+.interface-content {
+  flex: 1;
+  padding: var(--spacing-6) var(--spacing-8);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-6);
+}
+
+.file-input-section {
+  flex-shrink: 0;
+}
+
+.next-steps {
+  padding: var(--spacing-4);
+  background-color: rgba(5, 150, 105, 0.1);
+  border: 1px solid var(--color-success);
+  border-radius: var(--radius-lg);
+  text-align: center;
+}
+
+.next-steps-text {
+  color: var(--color-success);
+  font-weight: var(--font-weight-medium);
+  margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .interface-header {
+    padding: var(--spacing-4) var(--spacing-4);
+  }
+
+  .interface-header h1 {
+    font-size: var(--font-size-xl);
+  }
+
+  .interface-content {
+    padding: var(--spacing-4);
+    gap: var(--spacing-4);
+  }
+}
+
+@media (max-width: 480px) {
+  .interface-header {
+    padding: var(--spacing-3) var(--spacing-3);
+  }
+
+  .interface-header h1 {
+    font-size: var(--font-size-lg);
+  }
+
+  .interface-header p {
+    font-size: var(--font-size-sm);
+  }
+
+  .interface-content {
+    padding: var(--spacing-3);
+  }
+}

@@ -1,0 +1,98 @@
+/* Base Card Styles */
+.card {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Variant Styles */
+.default {
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.outlined {
+  border: 1px solid var(--color-border);
+  box-shadow: none;
+}
+
+.elevated {
+  border: none;
+  box-shadow: var(--shadow-md);
+}
+
+/* Padding Variants */
+.padding-none {
+  padding: 0;
+}
+
+.padding-sm {
+  padding: var(--spacing-4);
+}
+
+.padding-md {
+  padding: var(--spacing-6);
+}
+
+.padding-lg {
+  padding: var(--spacing-8);
+}
+
+/* Hover Effect */
+.hover {
+  cursor: pointer;
+}
+
+.hover:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.hover.outlined:hover {
+  border-color: var(--color-border-hover);
+  box-shadow: var(--shadow-md);
+}
+
+.hover:active {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.hover.outlined:active {
+  box-shadow: var(--shadow-sm);
+}
+
+/* Focus Styles for Interactive Cards */
+.hover:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.hover:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    transition: none;
+  }
+
+  .hover:hover,
+  .hover:active {
+    transform: none;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .card {
+    border-width: 2px;
+  }
+
+  .elevated {
+    border: 2px solid var(--color-border);
+  }
+}

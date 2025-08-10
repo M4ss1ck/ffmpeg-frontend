@@ -15,23 +15,39 @@ const electronAPI = {
   // FFmpeg integration
   ffmpeg: {
     detect: () => ipcRenderer.invoke('ffmpeg:detect'),
-    setCustomPath: (customPath: string) => ipcRenderer.invoke('ffmpeg:setCustomPath', customPath),
+    setCustomPath: (customPath: string) =>
+      ipcRenderer.invoke('ffmpeg:setCustomPath', customPath),
     getFormats: () => ipcRenderer.invoke('ffmpeg:getFormats'),
     getCodecs: () => ipcRenderer.invoke('ffmpeg:getCodecs'),
     getFilters: () => ipcRenderer.invoke('ffmpeg:getFilters'),
-    validateCommand: (command: string) => ipcRenderer.invoke('ffmpeg:validateCommand', command),
-    executeCommand: (command: string) => ipcRenderer.invoke('ffmpeg:executeCommand', command),
+    validateCommand: (command: string) =>
+      ipcRenderer.invoke('ffmpeg:validateCommand', command),
+    executeCommand: (command: string) =>
+      ipcRenderer.invoke('ffmpeg:executeCommand', command),
   },
 
   // File handling
   file: {
     getInfo: (filePath: string) => ipcRenderer.invoke('file:getInfo', filePath),
-    validate: (filePath: string) => ipcRenderer.invoke('file:validate', filePath),
-    validateMultiple: (filePaths: string[]) => ipcRenderer.invoke('file:validateMultiple', filePaths),
-    isSupported: (filePath: string) => ipcRenderer.invoke('file:isSupported', filePath),
-    getSupportedExtensions: () => ipcRenderer.invoke('file:getSupportedExtensions'),
-    generateThumbnail: (filePath: string, outputPath: string, timeOffset?: number) =>
-      ipcRenderer.invoke('file:generateThumbnail', filePath, outputPath, timeOffset),
+    validate: (filePath: string) =>
+      ipcRenderer.invoke('file:validate', filePath),
+    validateMultiple: (filePaths: string[]) =>
+      ipcRenderer.invoke('file:validateMultiple', filePaths),
+    isSupported: (filePath: string) =>
+      ipcRenderer.invoke('file:isSupported', filePath),
+    getSupportedExtensions: () =>
+      ipcRenderer.invoke('file:getSupportedExtensions'),
+    generateThumbnail: (
+      filePath: string,
+      outputPath: string,
+      timeOffset?: number
+    ) =>
+      ipcRenderer.invoke(
+        'file:generateThumbnail',
+        filePath,
+        outputPath,
+        timeOffset
+      ),
   },
 
   // Enhanced file dialogs

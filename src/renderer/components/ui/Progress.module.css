@@ -1,0 +1,142 @@
+/* Container */
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+/* Label */
+.labelContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+/* Progress Track */
+.progress {
+  width: 100%;
+  background-color: var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  position: relative;
+}
+
+/* Size Variants */
+.sm {
+  height: 4px;
+}
+
+.md {
+  height: 8px;
+}
+
+.lg {
+  height: 12px;
+}
+
+/* Progress Bar */
+.bar {
+  height: 100%;
+  border-radius: inherit;
+  transition: width var(--transition-slow) ease-out;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Color Variants */
+.default .bar {
+  background-color: var(--color-primary);
+}
+
+.success .bar {
+  background-color: var(--color-success);
+}
+
+.warning .bar {
+  background-color: var(--color-warning);
+}
+
+.error .bar {
+  background-color: var(--color-error);
+}
+
+/* Animated Progress */
+.animated::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Indeterminate Progress */
+.indeterminate .bar {
+  width: 100% !important;
+  background: linear-gradient(
+    90deg,
+    var(--color-border) 0%,
+    var(--color-primary) 50%,
+    var(--color-border) 100%
+  );
+  background-size: 200% 100%;
+  animation: indeterminate 2s infinite linear;
+}
+
+@keyframes indeterminate {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .bar {
+    transition: none;
+  }
+
+  .animated::before {
+    animation: none;
+  }
+
+  .indeterminate .bar {
+    animation: none;
+    background: var(--color-primary);
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .progress {
+    border: 1px solid var(--color-text-primary);
+  }
+
+  .bar {
+    border: 1px solid transparent;
+  }
+}

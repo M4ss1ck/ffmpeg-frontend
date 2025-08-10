@@ -1,0 +1,220 @@
+/* File Drop Zone Styles */
+.dropZone {
+  position: relative;
+  min-height: 200px;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+  transition: all var(--transition-normal);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-8);
+  overflow: hidden;
+}
+
+.dropZone:hover {
+  border-color: var(--color-primary);
+  background-color: rgba(30, 64, 175, 0.02);
+}
+
+.dropZone:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-color: var(--color-primary);
+}
+
+/* Drag Over State */
+.dragOver {
+  border-color: var(--color-primary);
+  background-color: rgba(30, 64, 175, 0.05);
+  border-style: solid;
+  transform: scale(1.02);
+}
+
+/* Disabled State */
+.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Processing State */
+.processing {
+  cursor: wait;
+}
+
+.processing:hover {
+  border-color: var(--color-border);
+  background-color: var(--color-surface);
+  transform: none;
+}
+
+/* Content Layout */
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-4);
+  text-align: center;
+  z-index: 1;
+}
+
+/* Icon Styles */
+.icon {
+  color: var(--color-text-secondary);
+  transition: color var(--transition-normal);
+}
+
+.dropZone:hover .icon {
+  color: var(--color-primary);
+}
+
+.dragOver .icon {
+  color: var(--color-primary);
+}
+
+/* Spinner Animation */
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid var(--color-border);
+  border-top: 3px solid var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Text Styles */
+.text {
+  max-width: 400px;
+}
+
+.title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-2);
+}
+
+.subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: 0;
+}
+
+/* Drag Overlay */
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(30, 64, 175, 0.1);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.overlayContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-3);
+  color: var(--color-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.overlayIcon {
+  animation: bounce 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes bounce {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-8px);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .dropZone {
+    min-height: 160px;
+    padding: var(--spacing-6);
+  }
+
+  .title {
+    font-size: var(--font-size-base);
+  }
+
+  .subtitle {
+    font-size: var(--font-size-xs);
+  }
+
+  .icon svg,
+  .overlayIcon svg {
+    width: 32px;
+    height: 32px;
+  }
+
+  .spinner {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .dropZone,
+  .icon,
+  .overlay {
+    transition: none;
+  }
+
+  .dragOver {
+    transform: none;
+  }
+
+  .spinner {
+    animation: none;
+    border-top-color: var(--color-primary);
+  }
+
+  .overlayIcon {
+    animation: none;
+  }
+
+  .overlay {
+    animation: none;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .dropZone {
+    border-width: 3px;
+  }
+
+  .dragOver {
+    border-width: 3px;
+  }
+}

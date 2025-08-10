@@ -117,18 +117,26 @@ export const setupIPC = (): void => {
     }
   });
 
-  ipcMain.handle('file:generateThumbnail', async (_, filePath: string, outputPath: string, timeOffset?: number) => {
-    try {
-      const thumbnailPath = await fileService.generateThumbnail(filePath, outputPath, timeOffset);
-      return { success: true, data: thumbnailPath };
-    } catch (error: any) {
-      return { success: false, error: error.message };
+  ipcMain.handle(
+    'file:generateThumbnail',
+    async (_, filePath: string, outputPath: string, timeOffset?: number) => {
+      try {
+        const thumbnailPath = await fileService.generateThumbnail(
+          filePath,
+          outputPath,
+          timeOffset
+        );
+        return { success: true, data: thumbnailPath };
+      } catch (error: any) {
+        return { success: false, error: error.message };
+      }
     }
-  });
+  );
 
   // Enhanced file dialog handlers
   ipcMain.handle('dialog:selectFiles', async (_, options) => {
-    if (!mainWindow) return { success: false, error: 'No main window available' };
+    if (!mainWindow)
+      return { success: false, error: 'No main window available' };
 
     try {
       const filePaths = await fileService.selectFiles(mainWindow, options);
@@ -139,10 +147,14 @@ export const setupIPC = (): void => {
   });
 
   ipcMain.handle('dialog:selectOutputPath', async (_, options) => {
-    if (!mainWindow) return { success: false, error: 'No main window available' };
+    if (!mainWindow)
+      return { success: false, error: 'No main window available' };
 
     try {
-      const outputPath = await fileService.selectOutputPath(mainWindow, options);
+      const outputPath = await fileService.selectOutputPath(
+        mainWindow,
+        options
+      );
       return { success: true, data: outputPath };
     } catch (error: any) {
       return { success: false, error: error.message };
