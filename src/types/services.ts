@@ -123,3 +123,49 @@ export interface DragDropEvent {
   x: number;
   y: number;
 }
+
+// Output Settings Types
+export interface OutputSettings {
+  format: string;
+  codec: string;
+  quality: QualitySettings;
+  outputPath: string;
+  customOptions?: string;
+}
+
+export interface QualitySettings {
+  videoBitrate?: number;
+  audioBitrate?: number;
+  resolution?: Resolution;
+  frameRate?: number;
+  preset?: string;
+  crf?: number; // Constant Rate Factor for quality-based encoding
+}
+
+export interface Resolution {
+  width: number;
+  height: number;
+  label: string; // e.g., "1920x1080 (Full HD)"
+}
+
+export interface QualityPreset {
+  id: string;
+  name: string;
+  description: string;
+  settings: QualitySettings;
+  estimatedSizeMultiplier: number; // Multiplier for file size estimation
+}
+
+export interface FormatCodecMapping {
+  format: string;
+  videoCodecs: string[];
+  audioCodecs: string[];
+  defaultVideoCodec?: string;
+  defaultAudioCodec?: string;
+}
+
+export interface FileSizeEstimate {
+  estimatedSize: number; // in bytes
+  estimatedSizeFormatted: string; // e.g., "125 MB"
+  confidence: 'low' | 'medium' | 'high';
+}
