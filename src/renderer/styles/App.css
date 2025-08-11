@@ -97,43 +97,25 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: var(--spacing-6);
 }
 
-.interface-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+.interface-sections {
+  width: 100%;
+  max-width: 800px;
+  display: flex;
+  flex-direction: column;
   gap: var(--spacing-6);
-  align-items: start;
 }
 
-.interface-grid:has(.file-input-section):has(.output-settings-section):has(.filter-panel) {
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto auto;
-}
-
-.interface-grid .file-input-section {
-  grid-column: 1;
-  grid-row: 1;
-}
-
-.interface-grid .output-settings-section {
-  grid-column: 2;
-  grid-row: 1;
-}
-
-.interface-grid .filter-panel {
-  grid-column: 1 / -1;
-  grid-row: 2;
-  min-height: 400px;
-}
-
-.file-input-section {
-  flex-shrink: 0;
-}
-
-.output-settings-section {
-  flex-shrink: 0;
+.file-input-section,
+.output-settings-section,
+.filter-panel,
+.command-section,
+.conversion-ready,
+.processing-queue-section {
+  width: 100%;
 }
 
 .conversion-ready {
@@ -146,6 +128,7 @@
   flex-direction: column;
   align-items: center;
   gap: var(--spacing-4);
+  max-width: 800px;
 }
 
 .conversion-ready.processing {
@@ -164,12 +147,6 @@
   font-weight: var(--font-weight-medium);
   font-size: var(--font-size-lg);
   margin: 0;
-}
-
-.command-section {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
 }
 
 .next-steps {
@@ -201,30 +178,8 @@
     gap: var(--spacing-4);
   }
 
-  .interface-grid {
-    grid-template-columns: 1fr;
+  .interface-sections {
     gap: var(--spacing-4);
-  }
-
-  .interface-grid:has(.file-input-section):has(.output-settings-section):has(.filter-panel) {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto;
-  }
-
-  .interface-grid .file-input-section {
-    grid-column: 1;
-    grid-row: 1;
-  }
-
-  .interface-grid .output-settings-section {
-    grid-column: 1;
-    grid-row: 2;
-  }
-
-  .interface-grid .filter-panel {
-    grid-column: 1;
-    grid-row: 3;
-    min-height: 300px;
   }
 }
 
@@ -276,9 +231,8 @@
 }
 
 .command-section {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  max-width: 800px;
+  padding: 0 16px 16px 16px;
 }
 
 .conversion-actions {
