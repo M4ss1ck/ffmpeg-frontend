@@ -32,6 +32,12 @@
 }
 
 /* Size Variants */
+.xs {
+  height: 24px;
+  padding: 0 var(--spacing-2);
+  font-size: var(--font-size-xs);
+}
+
 .sm {
   height: 32px;
   padding: 0 var(--spacing-3);
@@ -134,6 +140,24 @@
 }
 
 .danger:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+.danger-outline {
+  background-color: transparent;
+  color: var(--color-error);
+  border-color: var(--color-error);
+}
+
+.danger-outline:hover:not(:disabled) {
+  background-color: var(--color-error);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.danger-outline:active:not(:disabled) {
   transform: translateY(0);
   box-shadow: var(--shadow-sm);
 }

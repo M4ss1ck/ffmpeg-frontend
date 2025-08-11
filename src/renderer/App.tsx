@@ -5,6 +5,7 @@ import FileInputInterface from './components/FileInputInterface';
 import OutputSettings from './components/OutputSettings';
 import FilterPanel from './components/FilterPanel';
 import CommandPreview from './components/CommandPreview';
+import ProcessingQueue from './components/ProcessingQueue';
 import Button from './components/ui/Button';
 import {
   MediaFileInfo,
@@ -14,6 +15,7 @@ import {
   FilterCategory,
   FFmpegCommand,
   GeneratedCommand,
+  ProcessingJob,
 } from '../types/services';
 import './styles/App.css';
 
@@ -34,9 +36,8 @@ const App: React.FC = () => {
   const [filterDefinitions, setFilterDefinitions] = useState<FilterDefinition[]>([]);
   const [filterCategories, setFilterCategories] = useState<FilterCategory[]>([]);
   const [generatedCommand, setGeneratedCommand] = useState<GeneratedCommand | null>(null);
+  const [overallProgress, setOverallProgress] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [runId, setRunId] = useState<string | null>(null);
 
   useEffect(() => {
     // Listen for window maximize/restore events
@@ -49,6 +50,20 @@ const App: React.FC = () => {
     // Load filter definitions and categories
     loadFilterData();
   }, []);
+
+  // Function to update progress from ProcessingQueue component
+  const handleQueueStateChange = (state: any) => {
+    setIsProcessing(state.isRunning);
+
+    // Calculate overall progress
+    if (state.jobs.length > 0) {
+      const totalProgress = state.jobs.reduce((sum: number, job: any) => sum + job.progress, 0);
+      const avgProgress = totalProgress / state.jobs.length;
+      setOverallProgress(avgProgress);
+    } else {
+      setOverallProgress(0);
+    }
+  };
 
   // Load filter definitions and categories from main process
   const loadFilterData = async () => {
@@ -192,160 +207,98 @@ const App: React.FC = () => {
               )}
 
               {selectedFiles.length > 0 && outputSettings.outputPath && (
-                <div className="conversion-ready">
+                <div className={`conversion-ready ${isProcessing ? 'processing' : ''}`}>
                   <p className="conversion-ready-text">
                     Ready to convert {selectedFiles.length} file{selectedFiles.length !== 1 ? 's' : ''} to {outputSettings.format.toUpperCase()}
                     {filters.length > 0 && ` with ${filters.filter(f => f.enabled).length} filter(s)`}
                   </p>
                   {isProcessing && (
-                    <div style={{ marginTop: 8 }}>
-                      <div className="progress-container">
-                        <div className="progress-bar">
-                          <div
-                            className="progress-fill"
-                            style={{ width: `${progress}%` }}
-                          />
-                        </div>
-                        <div className="progress-text">
-                          {progress > 0 ? `${Math.round(progress)}%` : 'Starting conversion...'}
-                        </div>
+                    <div className="progress-container">
+                      <div className="progress-bar">
+                        <div
+                          className="progress-fill"
+                          style={{ width: `${overallProgress}%` }}
+                        />
+                      </div>
+                      <div className="progress-text">
+                        {overallProgress > 0 ? `${Math.round(overallProgress)}%` : 'Starting conversion...'}
                       </div>
                     </div>
                   )}
-                  <Button
-                    variant="primary"
-                    size="lg"
-                    disabled={!generatedCommand || isProcessing}
-                    onClick={async () => {
-                      if (!generatedCommand) return;
-                      try {
-                        setIsProcessing(true);
-                        setProgress(0);
-                        const ffmpegApi = window.electronAPI.ffmpeg as any;
-                        const stripEnclosingQuotes = (s: string) => s.replace(/^\s*"(.*)"\s*$/, '$1').replace(/^\s*'(.*)'\s*$/, '$1');
-                        // For fallback string mode, do NOT escape quotes. Wrap with plain quotes so main parser respects spaces.
-                        const quoteIfNeeded = (arg: string) => (/[^A-Za-z0-9_\-./:=]/.test(arg) ? `"${arg}"` : arg);
-                        let safeArgs = generatedCommand.args.map(stripEnclosingQuotes);
-                        console.log('[renderer] generated args (raw):', generatedCommand.args);
-                        if (safeArgs.length > 0) {
-                          const last = safeArgs[safeArgs.length - 1];
-                          if (last && !last.startsWith('-')) {
-                            const lastSeg = last.split(/[/\\]/).pop() || '';
-                            const hasDot = lastSeg.includes('.');
-                            if (!hasDot) {
-                              const firstName = selectedFiles[0]?.name || 'output';
-                              const base = firstName.replace(/\.[^/.]+$/, '');
-                              const fmt = outputSettings.format || 'mp4';
-                              const dir = last.replace(/[\\/]$/, '');
-                              safeArgs[safeArgs.length - 1] = `${dir}/${base}.${fmt}`;
+                  <div className="conversion-actions">
+                    {!isProcessing ? (
+                      <Button
+                        variant="primary"
+                        size="lg"
+                        disabled={!generatedCommand}
+                        onClick={async () => {
+                          if (!generatedCommand) return;
+
+                          try {
+                            // Process each selected file
+                            for (const file of selectedFiles) {
+                              // Generate output path for this file
+                              const outputDir = outputSettings.outputPath.replace(/[/\\][^/\\]*$/, '');
+                              const baseName = file.name.replace(/\.[^/.]+$/, '');
+                              const outputFile = `${outputDir}/${baseName}_converted.${outputSettings.format}`;
+
+                              // Create job for this file
+                              const job: Omit<ProcessingJob, 'id' | 'status' | 'progress'> = {
+                                inputFile: file.path,
+                                outputFile,
+                                args: generatedCommand.args.map(arg =>
+                                  arg === selectedFiles[0].path ? file.path :
+                                    arg === outputSettings.outputPath ? outputFile : arg
+                                ),
+                                durationSeconds: file.duration,
+                              };
+
+                              // Add job to queue
+                              const result = await window.electronAPI?.queue?.addJob(job);
+                              if (!result?.success) {
+                                console.error('Failed to add job to queue:', result?.error);
+                              }
                             }
-                            // Avoid in-place output: if output equals input, rename to _converted (no spaces to survive legacy split)
-                            const inputFlagIdx = safeArgs.findIndex(a => a === '-i');
-                            const inputPath = inputFlagIdx >= 0 ? safeArgs[inputFlagIdx + 1] : selectedFiles[0]?.path;
-                            const outputPath = safeArgs[safeArgs.length - 1];
-                            const norm = (p: string) => (p || '').replace(/^\s*"|"\s*$/g, '');
-                            if (norm(inputPath) === norm(outputPath)) {
-                              const extMatch = outputPath.match(/\.[^./\\]+$/);
-                              const ext = extMatch ? extMatch[0] : `.${outputSettings.format || 'mp4'}`;
-                              const dir = outputPath.replace(/[/\\][^/\\]+$/, '');
-                              const base = (selectedFiles[0]?.name || 'output').replace(/\.[^./\\]+$/, '');
-                              const adjusted = `${dir}/${base}_converted${ext}`;
-                              console.warn('[renderer] output equals input; adjusting to:', adjusted);
-                              safeArgs[safeArgs.length - 1] = adjusted;
-                            }
-                            console.log('[renderer] input/output:', { input: inputPath, output: safeArgs[safeArgs.length - 1] });
-                            // confirm overwrite if file exists
-                            const outputPath2 = safeArgs[safeArgs.length - 1];
-                            try {
-                              const exists = await window.electronAPI.file.getInfo(outputPath2).then((r: any) => r.success);
-                              if (exists) {
-                                const resp = await window.electronAPI.dialog.confirmOverwrite(outputPath2);
-                                const ok = resp?.success && resp.data === true;
-                                if (!ok) {
-                                  setIsProcessing(false);
-                                  return;
-                                }
-                              }
-                            } catch { }
+
+                            // Start the queue
+                            await window.electronAPI?.queue?.start({
+                              retryOnFail: true,
+                              maxRetriesPerJob: 2,
+                            });
+
+                          } catch (error) {
+                            console.error('Failed to start conversion:', error);
+                            alert(`Failed to start conversion: ${error}`);
                           }
-                        }
-                        let res: any;
-                        try {
-                          // Prefer progress API when available
-                          if (typeof ffmpegApi.startWithProgress === 'function' && typeof ffmpegApi.onProgress === 'function') {
-                            const id = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-                            setRunId(id);
-
-                            // Set up progress handler
-                            const progressHandler = (payload: any) => {
-                              if (payload?.runId === id && typeof payload.percent === 'number') {
-                                const progressValue = Math.max(0, Math.min(100, Math.round(payload.percent)));
-                                console.log(`[renderer] Progress: ${progressValue}%`);
-                                setProgress(progressValue);
-                              }
-                            };
-
-                            // Set up completion handler
-                            const completeHandler = (payload: any) => {
-                              if (payload?.runId === id) {
-                                const result = payload.result;
-                                console.log('[renderer] Conversion complete:', result);
-                                if (!result?.success) {
-                                  const errMsg = result?.error || 'FFmpeg execution failed';
-                                  console.error('FFmpeg error:', errMsg);
-                                  alert(`Conversion failed: ${errMsg.split('\n').slice(-3).join('\n')}`);
-                                } else {
-                                  setProgress(100);
-                                  alert('Conversion completed successfully');
-                                }
-                                setIsProcessing(false);
-                                setRunId(null);
-                              }
-                            };
-
-                            // Register handlers
-                            ffmpegApi.onProgress(progressHandler);
-                            ffmpegApi.onComplete(completeHandler);
-
-                            // Start conversion with progress tracking
-                            console.log('[renderer] Starting conversion with progress tracking');
-                            await ffmpegApi.startWithProgress(safeArgs, selectedFiles[0]?.duration, id);
-                            return; // handled by events
-                          } else if (typeof ffmpegApi.executeArgs === 'function') {
-                            console.log('[renderer] Using executeArgs without progress');
-                            res = await ffmpegApi.executeArgs(safeArgs);
-                          } else {
-                            throw new Error('executeArgs not available');
+                        }}
+                      >
+                        Start Conversion
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="danger-outline"
+                        size="lg"
+                        onClick={async () => {
+                          try {
+                            await window.electronAPI?.queue?.stop();
+                          } catch (error) {
+                            console.error('Failed to stop conversion:', error);
+                            alert(`Failed to stop conversion: ${error}`);
                           }
-                        } catch (invokeErr: any) {
-                          const msg = invokeErr?.message || '';
-                          if (msg.includes("No handler registered for 'ffmpeg:executeArgs'")) {
-                            console.warn('No handler for executeArgs; falling back to executeCommand');
-                            const joined = safeArgs.map(quoteIfNeeded).join(' ');
-                            res = await ffmpegApi.executeCommand(joined);
-                          } else {
-                            throw invokeErr;
-                          }
-                        }
-                        if (!res.success || !res.data?.success) {
-                          const errMsg = res.data?.error || 'FFmpeg execution failed';
-                          console.error('FFmpeg error:', errMsg);
-                          alert(`Conversion failed: ${errMsg.split('\n').slice(-3).join('\n')}`);
-                        } else {
-                          alert('Conversion completed successfully');
-                        }
-                      } catch (e: unknown) {
-                        console.error('Execution failed', e);
-                        alert(`Conversion failed: ${e?.message || String(e)}`);
-                      } finally {
-                        setIsProcessing(false);
-                      }
-                    }}
-                  >
-                    {isProcessing ? 'Processing…' : 'Start Conversion'}
-                  </Button>
+                        }}
+                      >
+                        Cancel Conversion
+                      </Button>
+                    )}
+                  </div>
                 </div>
               )}
+
+              {/* Processing Queue */}
+              <ProcessingQueue
+                className="processing-queue-section"
+                onStateChange={handleQueueStateChange}
+              />
             </div>
           </div>
         )}

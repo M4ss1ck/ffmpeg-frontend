@@ -3,6 +3,7 @@ import { mainWindow } from '../main.js';
 import { ffmpegService } from '../services/ffmpegService.js';
 import { fileService } from '../services/fileService.js';
 import { commandGenerationService } from '../services/commandGenerationService.js';
+import { queueService } from '../services/queueService.js';
 import { filterDefinitions, filterCategories } from '../data/filterDefinitions.js';
 
 export const setupIPC = (): void => {
@@ -323,6 +324,116 @@ export const setupIPC = (): void => {
       return { success: true, data: result };
     } catch (error: any) {
       return { success: false, error: error.message };
+    }
+  });
+
+  // Processing queue handlers
+  ipcMain.handle('queue:addJob', async (_, job) => {
+    try {
+      const jobId = queueService.addJob(job);
+      return { success: true, data: jobId };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('queue:removeJob', async (_, jobId: string) => {
+    try {
+      const removed = queueService.removeJob(jobId);
+      return { success: true, data: removed };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('queue:getState', async () => {
+    try {
+      const state = queueService.getState();
+      return { success: true, data: state };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('queue:start', async (_, options) => {
+    try {
+      await queueService.start(options);
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('queue:stop', async () => {
+    try {
+      queueService.stop();
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('queue:clear', async () => {
+    try {
+      queueService.clearQueue();
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('queue:retryJob', async (_, jobId: string) => {
+    try {
+      const retried = await queueService.retryJob(jobId);
+      return { success: true, data: retried };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('queue:cancelJob', async (_, jobId: string) => {
+    try {
+      const canceled = queueService.cancelJob(jobId);
+      return { success: true, data: canceled };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('queue:getJob', async (_, jobId: string) => {
+    try {
+      const job = queueService.getJob(jobId);
+      return { success: true, data: job };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('queue:getStats', async () => {
+    try {
+      const stats = queueService.getStats();
+      return { success: true, data: stats };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  // Set up queue event forwarding to renderer
+  queueService.on('progress', (event) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('queue:progress', event);
+    }
+  });
+
+  queueService.on('jobComplete', (event) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('queue:jobComplete', event);
+    }
+  });
+
+  queueService.on('stateChange', (event) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('queue:stateChange', event);
     }
   });
 

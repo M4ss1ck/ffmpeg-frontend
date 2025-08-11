@@ -98,6 +98,28 @@ const electronAPI = {
       ipcRenderer.invoke('command:parse', commandString),
   },
 
+  // Processing queue
+  queue: {
+    addJob: (job: any) => ipcRenderer.invoke('queue:addJob', job),
+    removeJob: (jobId: string) => ipcRenderer.invoke('queue:removeJob', jobId),
+    getState: () => ipcRenderer.invoke('queue:getState'),
+    start: (options?: any) => ipcRenderer.invoke('queue:start', options),
+    stop: () => ipcRenderer.invoke('queue:stop'),
+    clear: () => ipcRenderer.invoke('queue:clear'),
+    retryJob: (jobId: string) => ipcRenderer.invoke('queue:retryJob', jobId),
+    cancelJob: (jobId: string) => ipcRenderer.invoke('queue:cancelJob', jobId),
+    getJob: (jobId: string) => ipcRenderer.invoke('queue:getJob', jobId),
+    getStats: () => ipcRenderer.invoke('queue:getStats'),
+
+    // Event listeners
+    onProgress: (handler: (event: any) => void) =>
+      ipcRenderer.on('queue:progress', (_, event) => handler(event)),
+    onJobComplete: (handler: (event: any) => void) =>
+      ipcRenderer.on('queue:jobComplete', (_, event) => handler(event)),
+    onStateChange: (handler: (event: any) => void) =>
+      ipcRenderer.on('queue:stateChange', (_, event) => handler(event)),
+  },
+
   // System utilities (legacy)
   system: {
     checkFFmpeg: () => ipcRenderer.invoke('system:checkFFmpeg'),

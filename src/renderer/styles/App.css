@@ -148,6 +148,17 @@
   gap: var(--spacing-4);
 }
 
+.conversion-ready.processing {
+  position: sticky;
+  bottom: 0;
+  z-index: 50;
+  margin-top: auto;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+
 .conversion-ready-text {
   color: var(--color-primary);
   font-weight: var(--font-weight-medium);
@@ -251,7 +262,7 @@
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--color-primary), var(--color-primary-light));
+  background: var(--color-primary);
   border-radius: 4px;
   transition: width 0.3s ease;
   min-width: 2px;
@@ -268,5 +279,15 @@
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  overflow: hidden;
+}
+
+.conversion-actions {
+  display: flex;
+  gap: var(--spacing-3);
+  align-items: center;
+  justify-content: center;
+}
+
+.processing-queue-section {
+  margin-top: var(--spacing-6);
 }

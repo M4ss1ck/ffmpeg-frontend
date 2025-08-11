@@ -4,6 +4,7 @@ import {
     GeneratedCommand,
     FilterConfig,
     QualitySettings,
+    FilterParameterValue,
 } from '../../types/services';
 import { basename, extname, join, dirname, normalize } from 'path';
 import { existsSync } from 'fs';
@@ -40,14 +41,20 @@ class CommandGenerationService {
             };
         }
 
-        // For now generate a command for the first input only (batch handled later)
+        // Add all input files
+        command.inputFiles.forEach(inputFile => {
+            args.push('-i', inputFile);
+        });
+
         const primaryInput = command.inputFiles[0];
 
         // Detect audio-only intents based on selected format or input extension
         const isAudioOnly = this.isAudioOnlyFormat(command.format) || this.isAudioOnlyExtension(extname(primaryInput));
 
-        // Add input file (strictly unquoted for args array)
-        args.push('-i', primaryInput);
+        // Update description to reflect multiple files
+        if (command.inputFiles.length > 1) {
+            description = `FFmpeg batch conversion (${command.inputFiles.length} files)`;
+        }
 
         // Add codec(s)
         if (isAudioOnly) {
@@ -231,7 +238,7 @@ class CommandGenerationService {
         return params.join(':');
     }
 
-    private mapParameterKey(actualName: string, originalName: string, key: string): string {
+    private mapParameterKey(actualName: string, _originalName: string, key: string): string {
         // Per-filter key maps
         const perFilterMaps: Record<string, Record<string, string>> = {
             // Video scaling
@@ -494,7 +501,7 @@ class CommandGenerationService {
 
         filterParts.forEach((filterPart, index) => {
             const [name, ...paramParts] = filterPart.split('=');
-            const parameters: Record<string, any> = {};
+            const parameters: Record<string, FilterParameterValue> = {};
 
             if (paramParts.length > 0) {
                 const paramString = paramParts.join('=');
