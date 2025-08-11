@@ -24,7 +24,8 @@ const createWindow = (): void => {
     webPreferences: {
       nodeIntegration: false, // Security: disable node integration
       contextIsolation: true, // Security: enable context isolation
-      preload: join(__dirname, '../preload/preload.js'),
+      // __dirname points to dist/main/main at runtime; preload is built to dist/preload/preload.js
+      preload: join(__dirname, '../../preload/preload.js'),
       webSecurity: true,
       allowRunningInsecureContent: false,
     },

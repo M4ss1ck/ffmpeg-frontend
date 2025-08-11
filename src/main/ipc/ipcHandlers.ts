@@ -70,6 +70,17 @@ export const setupIPC = (): void => {
     }
   });
 
+  ipcMain.handle('ffmpeg:executeArgs', async (_, args: string[], totalDurationSeconds?: number) => {
+    console.log('[ipc] ffmpeg:executeArgs called with:', args);
+    try {
+      const result = await ffmpegService.executeArgs(args, undefined, totalDurationSeconds);
+      return { success: true, data: result };
+    } catch (error: any) {
+      console.error('[ipc] executeArgs error:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
   // File handling services
   ipcMain.handle('file:getInfo', async (_, filePath: string) => {
     try {
@@ -176,6 +187,20 @@ export const setupIPC = (): void => {
     } catch (error: any) {
       return { success: false, error: error.message };
     }
+  });
+
+  ipcMain.handle('dialog:confirmOverwrite', async (_, filePath: string) => {
+    const result = await dialog.showMessageBox(mainWindow!, {
+      type: 'warning',
+      buttons: ['Overwrite', 'Cancel'],
+      defaultId: 1,
+      cancelId: 1,
+      title: 'File exists',
+      message: 'The output file already exists.',
+      detail: filePath,
+      noLink: true,
+    });
+    return { success: true, data: result.response === 0 };
   });
 
   // Legacy file dialog handlers (for backward compatibility)

@@ -5,7 +5,8 @@ import {
     FilterConfig,
     QualitySettings,
 } from '../../types/services';
-import { basename, extname, join } from 'path';
+import { basename, extname, join, dirname, normalize } from 'path';
+import { existsSync } from 'fs';
 import { filterDefinitions } from '../data/filterDefinitions.js';
 
 class CommandGenerationService {
@@ -24,6 +25,12 @@ class CommandGenerationService {
         let description = 'FFmpeg conversion';
         let complexity: 'low' | 'medium' | 'high' = 'low';
 
+        console.log('[cmdgen] inputs:', {
+            inputFiles: command.inputFiles,
+            outputFile: command.outputFile,
+            format: command.format,
+        });
+
         if (!command.inputFiles || command.inputFiles.length === 0) {
             return {
                 command: 'ffmpeg',
@@ -39,8 +46,8 @@ class CommandGenerationService {
         // Detect audio-only intents based on selected format or input extension
         const isAudioOnly = this.isAudioOnlyFormat(command.format) || this.isAudioOnlyExtension(extname(primaryInput));
 
-        // Add input file
-        args.push('-i', `"${primaryInput}"`);
+        // Add input file (strictly unquoted for args array)
+        args.push('-i', primaryInput);
 
         // Add codec(s)
         if (isAudioOnly) {
@@ -101,6 +108,8 @@ class CommandGenerationService {
         // Add overwrite option
         if (options.overwriteOutput) {
             args.push('-y');
+        } else {
+            args.push('-n');
         }
 
         // Add verbose logging
@@ -109,10 +118,23 @@ class CommandGenerationService {
         }
 
         // Resolve output file path (directory -> file name based on input + format)
-        const resolvedOutput = this.resolveOutputFilePath(command.outputFile, primaryInput, command.format);
-        args.push(`"${resolvedOutput}"`);
+        let resolvedOutput = this.resolveOutputFilePath(command.outputFile, primaryInput, command.format);
+        console.log('[cmdgen] resolvedOutput initially:', resolvedOutput);
+        // Avoid in-place editing: output must not equal input
+        if (this.pathsEqual(resolvedOutput, primaryInput)) {
+            const adjusted = this.makeNonInPlaceOutput(resolvedOutput);
+            console.log('[cmdgen] pathsEqual -> adjusting output:', {
+                input: primaryInput,
+                outputBefore: resolvedOutput,
+                outputAfter: adjusted,
+            });
+            resolvedOutput = adjusted;
+        }
+        args.push(resolvedOutput);
 
-        const fullCommand = `ffmpeg ${args.join(' ')}`;
+        const fullCommand = this.buildDisplayCommand(args);
+        console.log('[cmdgen] final args:', args);
+        console.log('[cmdgen] display command:', fullCommand);
 
         return {
             command: fullCommand,
@@ -120,6 +142,16 @@ class CommandGenerationService {
             description,
             estimatedComplexity: complexity,
         };
+    }
+
+    private buildDisplayCommand(args: string[]): string {
+        const needsQuoting = /\s|["'\\]/;
+        const quote = (arg: string): string => {
+            if (!needsQuoting.test(arg)) return arg;
+            const escaped = arg.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+            return `"${escaped}"`;
+        };
+        return `ffmpeg ${args.map(quote).join(' ')}`;
     }
 
     /**
@@ -492,6 +524,7 @@ class CommandGenerationService {
     }
 
     private resolveOutputFilePath(outputPathOrDir: string, inputFile: string, format?: string): string {
+        console.log('[cmdgen.resolve] inputs:', { outputPathOrDir, inputFile, format });
         const inputBase = basename(inputFile, extname(inputFile));
         const targetExt = this.normalizeFormatExtension(format || extname(inputFile).replace(/^\./, ''));
 
@@ -500,15 +533,56 @@ class CommandGenerationService {
         const looksLikeDirectory = !lastSegment.includes('.') || /[/\\]$/.test(outputPathOrDir);
 
         if (looksLikeDirectory) {
-            return join(outputPathOrDir, `${inputBase}.${targetExt}`);
+            const inputDir = dirname(inputFile);
+            const outDir = outputPathOrDir.replace(/[\\/]$/, '');
+            const currentExt = extname(inputFile).replace(/^\./, '').toLowerCase();
+            const sameDir = outDir === inputDir;
+            const sameExt = currentExt === (targetExt || '').toLowerCase();
+            if (sameDir && sameExt) {
+                const candidate = join(outDir, `${inputBase} (converted).${targetExt}`);
+                console.log('[cmdgen.resolve] directory target equals input dir/ext; using:', candidate);
+                return candidate;
+            }
+            const candidate = join(outDir, `${inputBase}.${targetExt}`);
+            console.log('[cmdgen.resolve] directory target using:', candidate);
+            return candidate;
         }
 
         // If a file path is provided without extension and format is known, append it
         if (!lastSegment.includes('.') && targetExt) {
-            return `${outputPathOrDir}.${targetExt}`;
+            const candidate = `${outputPathOrDir}.${targetExt}`;
+            console.log('[cmdgen.resolve] file path without ext; using:', candidate);
+            return candidate;
         }
 
+        console.log('[cmdgen.resolve] explicit file path:', outputPathOrDir);
         return outputPathOrDir;
+    }
+
+    private makeNonInPlaceOutput(pathStr: string): string {
+        const dir = dirname(pathStr);
+        const base = basename(pathStr, extname(pathStr));
+        const ext = extname(pathStr);
+        // Suggest ' (converted)' first, then numbered fallbacks if exists
+        let candidate = join(dir, `${base} (converted)${ext}`);
+        if (!existsSync(candidate)) return candidate;
+        let i = 1;
+        while (existsSync(candidate)) {
+            candidate = join(dir, `${base} (${i})${ext}`);
+            i += 1;
+        }
+        return candidate;
+    }
+
+    private pathsEqual(a: string, b: string): boolean {
+        const sanitize = (p: string) => normalize(p.replace(/^['"]|['"]$/g, ''));
+        const sa = sanitize(a);
+        const sb = sanitize(b);
+        const eq = sa === sb;
+        if (eq) {
+            console.log('[cmdgen.pathsEqual] equal', { a, b, sa, sb });
+        }
+        return eq;
     }
 
     private normalizeFormatExtension(fmt: string): string {

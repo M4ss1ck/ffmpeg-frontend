@@ -223,7 +223,8 @@ class FFmpegService {
     await this.ensureFFmpegDetected();
 
     return new Promise(resolve => {
-      const process = spawn(this.ffmpegPath!, command.split(' '), {
+      const argv = this.parseCommandArgs(command);
+      const process = spawn(this.ffmpegPath!, argv, {
         stdio: ['pipe', 'pipe', 'pipe'],
       });
 
@@ -264,6 +265,44 @@ class FFmpegService {
           exitCode: -1,
         });
       });
+    });
+  }
+
+  /** Execute ffmpeg with args array and richer progress (optional duration) */
+  async executeArgs(
+    args: string[],
+    onProgress?: (progress: number, details?: { time?: number; speed?: string }) => void,
+    totalDurationSeconds?: number
+  ): Promise<ExecutionResult> {
+    await this.ensureFFmpegDetected();
+
+    return new Promise(resolve => {
+      const sanitizedArgs = args.map(a => this.stripEnclosingQuotes(a));
+      console.log('[ffmpeg.executeArgs] argv:', sanitizedArgs);
+      const proc = spawn(this.ffmpegPath!, sanitizedArgs, { stdio: ['ignore', 'ignore', 'pipe'] });
+      let stdout = '';
+      let stderr = '';
+
+      // stdio set to ignore for stdout; keep only stderr parsing for progress/errors
+      proc.stderr?.on('data', d => {
+        const chunk = d.toString();
+        stderr += chunk;
+        if (chunk.includes('Output') || chunk.includes('Input') || chunk.includes('Error')) {
+          console.log('[ffmpeg.stderr]', chunk.trim());
+        }
+        if (onProgress) {
+          const { percent, timeSeconds, speed } = this.extractProgressDetails(chunk, totalDurationSeconds);
+          if (percent !== null) onProgress(percent, { time: timeSeconds, speed });
+        }
+      });
+
+      proc.on('close', code =>
+        resolve({ success: code === 0, output: stdout, error: code !== 0 ? stderr : undefined, exitCode: code || 0 })
+      );
+
+      proc.on('error', err =>
+        resolve({ success: false, output: stdout, error: err.message, exitCode: -1 })
+      );
     });
   }
 
@@ -510,6 +549,41 @@ class FFmpegService {
     return null;
   }
 
+  /** Rich progress parse with optional duration */
+  private extractProgressDetails(
+    output: string,
+    totalDurationSeconds?: number
+  ): { percent: number | null; timeSeconds?: number; speed?: string } {
+    const timeMatch = output.match(/time=(\d{2}):(\d{2}):(\d{2}\.\d{2})/);
+    const speedMatch = output.match(/speed=([0-9.]+x)/);
+    let timeSeconds: number | undefined;
+    if (timeMatch) {
+      const [, hh, mm, ss] = timeMatch as unknown as [string, string, string, string];
+      timeSeconds = parseInt(hh) * 3600 + parseInt(mm) * 60 + parseFloat(ss);
+    }
+    let percent: number | null = null;
+    if (timeSeconds !== undefined && totalDurationSeconds && totalDurationSeconds > 0) {
+      percent = Math.max(0, Math.min(100, (timeSeconds / totalDurationSeconds) * 100));
+    }
+    const speed = speedMatch ? speedMatch[1] : undefined;
+    return { percent, timeSeconds, speed };
+  }
+
+  private stripEnclosingQuotes(arg: string): string {
+    if (!arg) return arg;
+    let out = arg.trim();
+    // Remove one level of matching single or double quotes around the whole token
+    if ((out.startsWith('"') && out.endsWith('"')) || (out.startsWith("'") && out.endsWith("'"))) {
+      out = out.slice(1, -1);
+    }
+    // Collapse double double-quotes at edges (e.g., ""path"")
+    if (out.startsWith('"') && out[out.length - 1] === '"') {
+      out = out.replace(/^"+/, '"').replace(/"+$/, '"');
+      out = out.replace(/^"/, '').replace(/"$/, '');
+    }
+    return out;
+  }
+
   /**
    * Extract warnings from FFmpeg output
    */
@@ -524,6 +598,32 @@ class FFmpegService {
     }
 
     return warnings;
+  }
+
+  /** Parse a command string into argv honoring quotes */
+  private parseCommandArgs(commandString: string): string[] {
+    // Remove leading executable name if present
+    const cleaned = commandString.replace(/^\s*ffmpeg\s+/, '');
+    const args: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < cleaned.length; i++) {
+      const ch = cleaned[i];
+      if (ch === '"') {
+        inQuotes = !inQuotes;
+        continue; // do not include quotes in token
+      }
+      if (ch === ' ' && !inQuotes) {
+        if (current.length > 0) {
+          args.push(current);
+          current = '';
+        }
+      } else {
+        current += ch;
+      }
+    }
+    if (current.length > 0) args.push(current);
+    return args;
   }
 
   /**

@@ -232,3 +232,38 @@ export interface GeneratedCommand {
   description: string;
   estimatedComplexity: 'low' | 'medium' | 'high';
 }
+
+// Processing queue types
+export type JobStatus =
+  | 'queued'
+  | 'running'
+  | 'completed'
+  | 'failed'
+  | 'canceled';
+
+export interface ProcessingJob {
+  id: string;
+  inputFile: string;
+  outputFile: string;
+  args: string[]; // args for ffmpeg process (without executable)
+  status: JobStatus;
+  progress: number; // 0-100
+  speed?: string; // e.g., 2.1x
+  etaSeconds?: number;
+  startTime?: number; // epoch ms
+  endTime?: number; // epoch ms
+  error?: string;
+  durationSeconds?: number; // from metadata if available
+}
+
+export interface QueueState {
+  jobs: ProcessingJob[];
+  activeJobId?: string;
+  isRunning: boolean;
+}
+
+export interface QueueStartOptions {
+  parallelism?: number; // future-proof, currently 1
+  retryOnFail?: boolean;
+  maxRetriesPerJob?: number;
+}

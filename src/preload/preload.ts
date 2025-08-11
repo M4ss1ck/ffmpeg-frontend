@@ -24,6 +24,8 @@ const electronAPI = {
       ipcRenderer.invoke('ffmpeg:validateCommand', command),
     executeCommand: (command: string) =>
       ipcRenderer.invoke('ffmpeg:executeCommand', command),
+    executeArgs: (args: string[], totalDurationSeconds?: number) =>
+      ipcRenderer.invoke('ffmpeg:executeArgs', args, totalDurationSeconds),
   },
 
   // File handling
@@ -65,6 +67,8 @@ const electronAPI = {
       ipcRenderer.invoke('dialog:selectOutputPath', options),
     selectOutputDirectory: (options?: Record<string, unknown>) =>
       ipcRenderer.invoke('dialog:selectOutputDirectory', options),
+    confirmOverwrite: (filePath: string) =>
+      ipcRenderer.invoke('dialog:confirmOverwrite', filePath),
   },
 
   // Application info
