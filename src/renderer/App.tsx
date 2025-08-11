@@ -57,7 +57,7 @@ const App: React.FC = () => {
 
     // Calculate overall progress
     if (state.jobs.length > 0) {
-      const totalProgress = state.jobs.reduce((sum: number, job: unknown) => sum + job.progress, 0);
+      const totalProgress = state.jobs.reduce((sum: number, job: any) => sum + job.progress, 0);
       const avgProgress = totalProgress / state.jobs.length;
       setOverallProgress(avgProgress);
     } else {

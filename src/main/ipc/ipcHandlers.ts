@@ -238,7 +238,7 @@ export const setupIPC = (): void => {
       filters: [
         {
           name: 'Video Files',
-          extensions: ['mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv', 'webm'],
+          extensions: ['mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv', 'webm', 'gif'],
         },
         {
           name: 'Audio Files',
@@ -259,7 +259,7 @@ export const setupIPC = (): void => {
       filters: [
         {
           name: 'Video Files',
-          extensions: ['mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv', 'webm'],
+          extensions: ['mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv', 'webm', 'gif'],
         },
         {
           name: 'Audio Files',

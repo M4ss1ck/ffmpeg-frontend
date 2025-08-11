@@ -134,6 +134,12 @@ const FORMAT_CODEC_MAPPINGS: Record<string, FormatCodecMapping> = {
         audioCodecs: ['libvorbis', 'libopus'],
         defaultAudioCodec: 'libvorbis',
     },
+    // Special formats
+    gif: {
+        videoCodecs: ['gif'],
+        audioCodecs: [],
+        defaultVideoCodec: 'gif',
+    },
 };
 
 const OutputSettings: React.FC<OutputSettingsProps> = ({
@@ -216,7 +222,9 @@ const OutputSettings: React.FC<OutputSettingsProps> = ({
                     { name: 'mkv', longName: 'Matroska / WebM', extensions: ['mkv'], mimeTypes: ['video/x-matroska'], canDemux: true, canMux: true },
                     { name: 'webm', longName: 'WebM', extensions: ['webm'], mimeTypes: ['video/webm'], canDemux: true, canMux: true },
                     { name: 'avi', longName: 'AVI (Audio Video Interleaved)', extensions: ['avi'], mimeTypes: ['video/x-msvideo'], canDemux: true, canMux: true },
-                    { name: 'mov', longName: 'QuickTime / MOV', extensions: ['mov'], mimeTypes: ['video/quicktime'], canDemux: true, canMux: true }
+                    { name: 'mov', longName: 'QuickTime / MOV', extensions: ['mov'], mimeTypes: ['video/quicktime'], canDemux: true, canMux: true },
+                    { name: 'gif', longName: 'GIF (Graphics Interchange Format)', extensions: ['gif'], mimeTypes: ['image/gif'], canDemux: true, canMux: true },
+                    { name: 'mp3', longName: 'MP3 (MPEG Audio Layer III)', extensions: ['mp3'], mimeTypes: ['audio/mpeg'], canDemux: true, canMux: true }
                 ];
             return fallbackFormats;
         }
@@ -227,7 +235,7 @@ const OutputSettings: React.FC<OutputSettingsProps> = ({
             );
         }
         return formats.filter(format =>
-            ['mp4', 'mkv', 'webm', 'avi', 'mov'].includes(format.name)
+            ['mp4', 'mkv', 'webm', 'avi', 'mov', 'gif', 'mp3'].includes(format.name)
         );
     }, [formats, fileType]);
 

@@ -58,8 +58,9 @@ class CommandGenerationService {
 
         // Add codec(s)
         if (isAudioOnly) {
-            // Use audio codec flag; prefer audioCodec, else reuse generic codec field via videoCodec
-            const codec = command.audioCodec || command.videoCodec;
+            // For audio-only formats, disable video and set audio codec
+            args.push('-vn'); // Disable video stream
+            const codec = command.audioCodec || this.getDefaultAudioCodecForFormat(command.format);
             if (codec) {
                 args.push('-c:a', codec);
                 description += ` with ${codec} audio codec`;
@@ -221,7 +222,7 @@ class CommandGenerationService {
 
         Object.entries(filter.parameters).forEach(([key, paramValue]) => {
             if (paramValue.value !== undefined && paramValue.value !== '') {
-                let value = paramValue.value as any;
+                let value = paramValue.value as unknown;
 
                 const mappedKey = this.mapParameterKey(actualName, filter.name, key);
 
@@ -611,6 +612,21 @@ class CommandGenerationService {
         const ext = extWithDot.replace(/^\./, '').toLowerCase();
         const audioExts = new Set(['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a', 'wma', 'opus']);
         return audioExts.has(ext);
+    }
+
+    private getDefaultAudioCodecForFormat(format?: string): string {
+        if (!format) return 'aac';
+
+        const codecMap: Record<string, string> = {
+            'mp3': 'mp3',
+            'wav': 'pcm_s16le',
+            'flac': 'flac',
+            'aac': 'aac',
+            'ogg': 'libvorbis',
+            'm4a': 'aac',
+        };
+
+        return codecMap[format.toLowerCase()] || 'aac';
     }
 }
 

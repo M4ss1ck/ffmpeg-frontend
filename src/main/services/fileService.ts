@@ -62,6 +62,7 @@ class FileService {
         '.wmv',
         '.flv',
         '.webm',
+        '.gif',
         '.m4v',
         '.3gp',
         '.asf',
@@ -140,6 +141,7 @@ class FileService {
                     'wmv',
                     'flv',
                     'webm',
+                    'gif',
                     'm4v',
                     '3gp',
                 ],
@@ -158,6 +160,7 @@ class FileService {
                     'wmv',
                     'flv',
                     'webm',
+                    'gif',
                     'm4v',
                     '3gp',
                     'mp3',
@@ -193,7 +196,7 @@ class FileService {
         const defaultFilters = [
             {
                 name: 'Video Files',
-                extensions: ['mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv', 'webm'],
+                extensions: ['mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv', 'webm', 'gif'],
             },
             {
                 name: 'Audio Files',
