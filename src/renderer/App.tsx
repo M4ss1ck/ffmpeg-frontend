@@ -36,6 +36,7 @@ const App: React.FC = () => {
   const [generatedCommand, setGeneratedCommand] = useState<GeneratedCommand | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [runId, setRunId] = useState<string | null>(null);
 
   useEffect(() => {
     // Listen for window maximize/restore events
@@ -196,6 +197,21 @@ const App: React.FC = () => {
                     Ready to convert {selectedFiles.length} file{selectedFiles.length !== 1 ? 's' : ''} to {outputSettings.format.toUpperCase()}
                     {filters.length > 0 && ` with ${filters.filter(f => f.enabled).length} filter(s)`}
                   </p>
+                  {isProcessing && (
+                    <div style={{ marginTop: 8 }}>
+                      <div className="progress-container">
+                        <div className="progress-bar">
+                          <div
+                            className="progress-fill"
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
+                        <div className="progress-text">
+                          {progress > 0 ? `${Math.round(progress)}%` : 'Starting conversion...'}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   <Button
                     variant="primary"
                     size="lg"
@@ -255,7 +271,48 @@ const App: React.FC = () => {
                         }
                         let res: any;
                         try {
-                          if (typeof ffmpegApi.executeArgs === 'function') {
+                          // Prefer progress API when available
+                          if (typeof ffmpegApi.startWithProgress === 'function' && typeof ffmpegApi.onProgress === 'function') {
+                            const id = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+                            setRunId(id);
+
+                            // Set up progress handler
+                            const progressHandler = (payload: any) => {
+                              if (payload?.runId === id && typeof payload.percent === 'number') {
+                                const progressValue = Math.max(0, Math.min(100, Math.round(payload.percent)));
+                                console.log(`[renderer] Progress: ${progressValue}%`);
+                                setProgress(progressValue);
+                              }
+                            };
+
+                            // Set up completion handler
+                            const completeHandler = (payload: any) => {
+                              if (payload?.runId === id) {
+                                const result = payload.result;
+                                console.log('[renderer] Conversion complete:', result);
+                                if (!result?.success) {
+                                  const errMsg = result?.error || 'FFmpeg execution failed';
+                                  console.error('FFmpeg error:', errMsg);
+                                  alert(`Conversion failed: ${errMsg.split('\n').slice(-3).join('\n')}`);
+                                } else {
+                                  setProgress(100);
+                                  alert('Conversion completed successfully');
+                                }
+                                setIsProcessing(false);
+                                setRunId(null);
+                              }
+                            };
+
+                            // Register handlers
+                            ffmpegApi.onProgress(progressHandler);
+                            ffmpegApi.onComplete(completeHandler);
+
+                            // Start conversion with progress tracking
+                            console.log('[renderer] Starting conversion with progress tracking');
+                            await ffmpegApi.startWithProgress(safeArgs, selectedFiles[0]?.duration, id);
+                            return; // handled by events
+                          } else if (typeof ffmpegApi.executeArgs === 'function') {
+                            console.log('[renderer] Using executeArgs without progress');
                             res = await ffmpegApi.executeArgs(safeArgs);
                           } else {
                             throw new Error('executeArgs not available');
@@ -277,7 +334,7 @@ const App: React.FC = () => {
                         } else {
                           alert('Conversion completed successfully');
                         }
-                      } catch (e: any) {
+                      } catch (e: unknown) {
                         console.error('Execution failed', e);
                         alert(`Conversion failed: ${e?.message || String(e)}`);
                       } finally {

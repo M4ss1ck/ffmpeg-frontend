@@ -26,6 +26,12 @@ const electronAPI = {
       ipcRenderer.invoke('ffmpeg:executeCommand', command),
     executeArgs: (args: string[], totalDurationSeconds?: number) =>
       ipcRenderer.invoke('ffmpeg:executeArgs', args, totalDurationSeconds),
+    startWithProgress: (args: string[], totalDurationSeconds: number | undefined, runId: string) =>
+      ipcRenderer.invoke('ffmpeg:startWithProgress', args, totalDurationSeconds, runId),
+    onProgress: (handler: (payload: { runId: string; percent: number; details?: any }) => void) =>
+      ipcRenderer.on('ffmpeg:progress', (_, payload) => handler(payload)),
+    onComplete: (handler: (payload: { runId: string; result: any }) => void) =>
+      ipcRenderer.on('ffmpeg:complete', (_, payload) => handler(payload)),
   },
 
   // File handling

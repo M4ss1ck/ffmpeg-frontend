@@ -1,4 +1,4 @@
-import { ipcMain, dialog } from 'electron';
+import { ipcMain, dialog, IpcMainInvokeEvent } from 'electron';
 import { mainWindow } from '../main.js';
 import { ffmpegService } from '../services/ffmpegService.js';
 import { fileService } from '../services/fileService.js';
@@ -80,6 +80,31 @@ export const setupIPC = (): void => {
       return { success: false, error: error.message };
     }
   });
+
+  // Start FFmpeg with progress events
+  ipcMain.handle(
+    'ffmpeg:startWithProgress',
+    async (event: IpcMainInvokeEvent, args: string[], totalDurationSeconds: number | undefined, runId: string) => {
+      try {
+        const webContents = event.sender;
+        const result = await ffmpegService.executeArgs(
+          args,
+          (percent, details) => {
+            // Emit progress events to renderer
+            try {
+              webContents.send('ffmpeg:progress', { runId, percent, details });
+            } catch { }
+          },
+          totalDurationSeconds
+        );
+        webContents.send('ffmpeg:complete', { runId, result });
+        return { success: true };
+      } catch (error: any) {
+        event.sender.send('ffmpeg:complete', { runId, result: { success: false, error: error.message, output: '', exitCode: -1 } });
+        return { success: false, error: error.message };
+      }
+    }
+  );
 
   // File handling services
   ipcMain.handle('file:getInfo', async (_, filePath: string) => {
