@@ -37,7 +37,7 @@ const createWindow = (): void => {
     // Open DevTools in development
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
+    mainWindow.loadFile(join(__dirname, '../../renderer/index.html'));
   }
 
   // Show window when ready to prevent visual flash
