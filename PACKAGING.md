@@ -32,8 +32,7 @@ npm run package:win
 
 Creates:
 
-- `release/FFmpeg Frontend Setup 1.0.0.exe` (NSIS installer)
-- `release/FFmpeg Frontend 1.0.0.exe` (Portable executable)
+- `release/Massiffmpeg Setup 1.0.0.exe` (NSIS installer)
 
 #### Linux
 
@@ -43,24 +42,7 @@ npm run package:linux
 
 Creates:
 
-- `release/FFmpeg Frontend-1.0.0.AppImage` (Universal Linux package)
-- `release/ffmpeg-frontend_1.0.0_amd64.deb` (Debian/Ubuntu package)
-- `release/ffmpeg-frontend-1.0.0.x86_64.rpm` (Red Hat/Fedora package)
-- `release/ffmpeg-frontend-1.0.0.tar.gz` (Generic Linux archive)
-
-## Package Details
-
-### Windows Packages
-
-- **NSIS Installer**: Full installer with desktop shortcuts and start menu entries
-- **Portable**: Standalone executable that doesn't require installation
-
-### Linux Packages
-
-- **AppImage**: Universal Linux package that runs on most distributions
-- **DEB**: Package for Debian, Ubuntu, and derivatives
-- **RPM**: Package for Red Hat, Fedora, CentOS, and derivatives
-- **TAR.GZ**: Generic archive for manual installation
+- `release/massiffmpeg-1.0.0.AppImage` (Universal Linux package)
 
 ## System Requirements
 
@@ -77,14 +59,6 @@ Creates:
 - 500MB free disk space
 - FFmpeg installed (automatically handled by DEB/RPM packages)
 
-## Icons and Assets
-
-The application uses platform-specific icons:
-
-- `assets/icon.ico` - Windows icon
-- `assets/icon.icns` - macOS icon (for future use)
-- `assets/icon.png` - Linux icon
-
 ## File Associations
 
 The Linux packages automatically register file associations for:
@@ -97,14 +71,10 @@ The Linux packages automatically register file associations for:
 ### Windows
 
 - The NSIS installer can be distributed directly to users
-- The portable version requires no installation
 
 ### Linux
 
 - AppImage can be distributed directly and runs on most distributions
-- DEB packages can be installed with `sudo dpkg -i package.deb`
-- RPM packages can be installed with `sudo rpm -i package.rpm`
-- TAR.GZ can be extracted and run manually
 
 ## Troubleshooting
 

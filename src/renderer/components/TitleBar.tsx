@@ -29,7 +29,7 @@ const TitleBar: React.FC<TitleBarProps> = ({ isMaximized }) => {
       <div className="title-bar-drag-region">
         <div className="title-bar-title">
           <span className="app-icon">⚡</span>
-          <span>FFmpeg Frontend</span>
+          <span>massiffmpeg</span>
         </div>
       </div>
       <div className="title-bar-controls">
