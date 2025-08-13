@@ -32,10 +32,10 @@ const createWindow = (): void => {
   });
 
   // Load the app
+  mainWindow.webContents.openDevTools();
   if (isDev) {
     mainWindow.loadURL('http://localhost:5173');
     // Open DevTools in development
-    mainWindow.webContents.openDevTools();
   } else {
     mainWindow.loadFile(join(__dirname, '../../renderer/index.html'));
   }

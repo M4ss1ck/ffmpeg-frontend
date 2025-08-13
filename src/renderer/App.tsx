@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import TitleBar from './components/TitleBar';
-import FileInputInterface from './components/FileInputInterface';
-import OutputSettings from './components/OutputSettings';
-import FilterPanel from './components/FilterPanel';
-import CommandPreview from './components/CommandPreview';
-import ProcessingQueue from './components/ProcessingQueue';
-import Button from './components/ui/Button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from './components/ui/Tabs';
+import FilesTab from './components/tabs/FilesTab';
+import SettingsTab from './components/tabs/SettingsTab';
+import FiltersTab from './components/tabs/FiltersTab';
+import PreviewTab from './components/tabs/PreviewTab';
+import QueueTab from './components/tabs/QueueTab';
 import {
   MediaFileInfo,
   OutputSettings as OutputSettingsType,
@@ -131,154 +131,139 @@ const App: React.FC = () => {
     console.log('Output settings updated:', settings);
   };
 
+  const handleStartConversion = async () => {
+    if (!generatedCommand) return;
+
+    try {
+      // Process each selected file
+      for (const file of selectedFiles) {
+        // Generate output path for this file
+        const outputDir = outputSettings.outputPath.replace(/[/\\][^/\\]*$/, '');
+        const baseName = file.name.replace(/\.[^/.]+$/, '');
+        const outputFile = `${outputDir}/${baseName}_converted.${outputSettings.format}`;
+
+        // Create job for this file
+        const job: Omit<ProcessingJob, 'id' | 'status' | 'progress'> = {
+          inputFile: file.path,
+          outputFile,
+          args: generatedCommand.args.map(arg =>
+            arg === selectedFiles[0].path ? file.path :
+              arg === outputSettings.outputPath ? outputFile : arg
+          ),
+          durationSeconds: file.duration,
+        };
+
+        // Add job to queue
+        const result = await window.electronAPI?.queue?.addJob(job);
+        if (!result?.success) {
+          console.error('Failed to add job to queue:', result?.error);
+        }
+      }
+
+      // Start the queue
+      await window.electronAPI?.queue?.start({
+        retryOnFail: true,
+        maxRetriesPerJob: 2,
+      });
+
+    } catch (error) {
+      console.error('Failed to start conversion:', error);
+      alert(`Failed to start conversion: ${error}`);
+    }
+  };
+
+  const handleCancelConversion = async () => {
+    try {
+      await window.electronAPI?.queue?.stop();
+    } catch (error) {
+      console.error('Failed to stop conversion:', error);
+      alert(`Failed to stop conversion: ${error}`);
+    }
+  };
+
+  const handleCommandEdit = async (editedCommand: string) => {
+    try {
+      const result = await window.electronAPI?.command?.parse(editedCommand);
+      if (result?.success) {
+        // Update settings based on parsed command
+        console.log('Parsed command:', result.data);
+      }
+    } catch (error) {
+      console.error('Failed to parse edited command:', error);
+    }
+  };
+
   return (
     <div className="app">
       <TitleBar isMaximized={isMaximized} />
       <main className="app-content">
-        <div className="main-interface">
-          <div className="interface-content">
-            <div className="interface-sections">
-              <FileInputInterface
-                onFilesChange={handleFilesChange}
-                maxFiles={10}
-                className="file-input-section"
-              />
+        <Tabs defaultValue="files" className="main-tabs">
+          <TabsList>
+            <TabsTrigger value="files">Files</TabsTrigger>
+            <TabsTrigger
+              value="settings"
+              disabled={selectedFiles.length === 0}
+            >
+              Settings
+            </TabsTrigger>
+            <TabsTrigger
+              value="filters"
+              disabled={selectedFiles.length === 0}
+            >
+              Filters
+            </TabsTrigger>
+            <TabsTrigger
+              value="preview"
+              disabled={selectedFiles.length === 0 || !outputSettings.outputPath}
+            >
+              Preview
+            </TabsTrigger>
+            <TabsTrigger value="queue">Queue</TabsTrigger>
+          </TabsList>
 
-              {selectedFiles.length > 0 && (
-                <OutputSettings
-                  selectedFiles={selectedFiles}
-                  onSettingsChange={handleOutputSettingsChange}
-                  className="output-settings-section"
-                />
-              )}
-
-              {selectedFiles.length > 0 && (
-                <FilterPanel
-                  filters={filters}
-                  onFiltersChange={setFilters}
-                  availableFilters={filterDefinitions}
-                  filterCategories={filterCategories}
-                />
-              )}
-            </div>
-
-            {selectedFiles.length > 0 && generatedCommand && (
-              <div className="command-section">
-                <CommandPreview
-                  command={generatedCommand}
-                  onCommandEdit={async (editedCommand) => {
-                    try {
-                      const result = await window.electronAPI?.command?.parse(editedCommand);
-                      if (result?.success) {
-                        // Update settings based on parsed command
-                        console.log('Parsed command:', result.data);
-                      }
-                    } catch (error) {
-                      console.error('Failed to parse edited command:', error);
-                    }
-                  }}
-                  onCopyCommand={() => {
-                    console.log('Command copied to clipboard');
-                  }}
-                />
-              </div>
-            )}
-
-            {selectedFiles.length > 0 && outputSettings.outputPath && (
-              <div className={`conversion-ready ${isProcessing ? 'processing' : ''}`}>
-                <p className="conversion-ready-text">
-                  Ready to convert {selectedFiles.length} file{selectedFiles.length !== 1 ? 's' : ''} to {outputSettings.format.toUpperCase()}
-                  {filters.length > 0 && ` with ${filters.filter(f => f.enabled).length} filter(s)`}
-                </p>
-                {isProcessing && (
-                  <div className="progress-container">
-                    <div className="progress-bar">
-                      <div
-                        className="progress-fill"
-                        style={{ width: `${overallProgress}%` }}
-                      />
-                    </div>
-                    <div className="progress-text">
-                      {overallProgress > 0 ? `${Math.round(overallProgress)}%` : 'Starting conversion...'}
-                    </div>
-                  </div>
-                )}
-                <div className="conversion-actions">
-                  {!isProcessing ? (
-                    <Button
-                      variant="primary"
-                      size="lg"
-                      disabled={!generatedCommand}
-                      onClick={async () => {
-                        if (!generatedCommand) return;
-
-                        try {
-                          // Process each selected file
-                          for (const file of selectedFiles) {
-                            // Generate output path for this file
-                            const outputDir = outputSettings.outputPath.replace(/[/\\][^/\\]*$/, '');
-                            const baseName = file.name.replace(/\.[^/.]+$/, '');
-                            const outputFile = `${outputDir}/${baseName}_converted.${outputSettings.format}`;
-
-                            // Create job for this file
-                            const job: Omit<ProcessingJob, 'id' | 'status' | 'progress'> = {
-                              inputFile: file.path,
-                              outputFile,
-                              args: generatedCommand.args.map(arg =>
-                                arg === selectedFiles[0].path ? file.path :
-                                  arg === outputSettings.outputPath ? outputFile : arg
-                              ),
-                              durationSeconds: file.duration,
-                            };
-
-                            // Add job to queue
-                            const result = await window.electronAPI?.queue?.addJob(job);
-                            if (!result?.success) {
-                              console.error('Failed to add job to queue:', result?.error);
-                            }
-                          }
-
-                          // Start the queue
-                          await window.electronAPI?.queue?.start({
-                            retryOnFail: true,
-                            maxRetriesPerJob: 2,
-                          });
-
-                        } catch (error) {
-                          console.error('Failed to start conversion:', error);
-                          alert(`Failed to start conversion: ${error}`);
-                        }
-                      }}
-                    >
-                      Start Conversion
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="danger-outline"
-                      size="lg"
-                      onClick={async () => {
-                        try {
-                          await window.electronAPI?.queue?.stop();
-                        } catch (error) {
-                          console.error('Failed to stop conversion:', error);
-                          alert(`Failed to stop conversion: ${error}`);
-                        }
-                      }}
-                    >
-                      Cancel Conversion
-                    </Button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Processing Queue */}
-            <ProcessingQueue
-              className="processing-queue-section"
-              onStateChange={handleQueueStateChange}
+          <TabsContent value="files">
+            <FilesTab
+              selectedFiles={selectedFiles}
+              onFilesChange={handleFilesChange}
             />
-          </div>
-        </div>
+          </TabsContent>
+
+          <TabsContent value="settings">
+            <SettingsTab
+              selectedFiles={selectedFiles}
+              outputSettings={outputSettings}
+              onSettingsChange={handleOutputSettingsChange}
+            />
+          </TabsContent>
+
+          <TabsContent value="filters">
+            <FiltersTab
+              filters={filters}
+              onFiltersChange={setFilters}
+              availableFilters={filterDefinitions}
+              filterCategories={filterCategories}
+              hasSelectedFiles={selectedFiles.length > 0}
+            />
+          </TabsContent>
+
+          <TabsContent value="preview">
+            <PreviewTab
+              generatedCommand={generatedCommand}
+              selectedFiles={selectedFiles}
+              outputSettings={outputSettings}
+              filters={filters}
+              isProcessing={isProcessing}
+              overallProgress={overallProgress}
+              onCommandEdit={handleCommandEdit}
+              onStartConversion={handleStartConversion}
+              onCancelConversion={handleCancelConversion}
+            />
+          </TabsContent>
+
+          <TabsContent value="queue">
+            <QueueTab onStateChange={handleQueueStateChange} />
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );

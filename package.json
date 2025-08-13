@@ -1,6 +1,6 @@
 {
   "name": "ffmpeg-frontend",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A user-friendly desktop application for FFmpeg operations",
   "main": "dist/main/main/main.js",
   "type": "module",
